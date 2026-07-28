@@ -11,7 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 import csv
 from io import StringIO
 import random
@@ -73,7 +73,9 @@ app.add_middleware(
 ui_dir = Path(__file__).resolve().parent / "ui"
 if ui_dir.exists():
     app.mount("/static", StaticFiles(directory=ui_dir), name="static")
+    app.mount("/router_sim/ui", StaticFiles(directory=ui_dir), name="legacy_ui")
     logger.info("Mounted ui static at /static -> %s", ui_dir)
+    logger.info("Mounted ui static at /router_sim/ui -> %s", ui_dir)
 routers_router = APIRouter(prefix="/routers", tags=["Routers"])
 #    Default admin setup on startup 
 
@@ -1750,9 +1752,9 @@ def adopt_device(payload: dict, db: Session = Depends(get_db), current_user: Aut
     return {"status": "adopted", "device_id": device.device_id, "config_preview": final_config}
 
 #           Simple health & root
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def root():
-    return {"service": "Router Management API", "status": "ok", "time": datetime.utcnow().isoformat()}
+    return RedirectResponse(url="/static/index.html")
 
 
 @app.get("/health")

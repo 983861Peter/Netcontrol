@@ -1,4 +1,10 @@
-const API_URL = window.API_BASE || "http://127.0.0.1:8080";
+const inferredApiBase = window.location.port === "3000"
+  ? "http://127.0.0.1:8080"
+  : window.location.origin;
+const API_URL = window.API_BASE || inferredApiBase;
+window.API_URL = API_URL;
+window.API_BASE = window.API_BASE || API_URL;
+console.log("[API] Using API base:", API_URL);
 
 // --- Auth helpers ---
 function authHeaders() {

@@ -21,7 +21,7 @@
 <pre id="output">Click a button to test...</pre>
 
 <script>
-const API_BASE = "http://127.0.0.1:8080";
+const API_BASE = window.API_BASE || (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin);
 
 async function testRouters(){
     try {

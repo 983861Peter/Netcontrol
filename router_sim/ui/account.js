@@ -1,4 +1,4 @@
-const API_BASE = (typeof API_URL !== 'undefined' ? API_URL : "http://127.0.0.1:8080");
+const API_BASE = (typeof API_URL !== 'undefined' ? API_URL : (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin));
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 

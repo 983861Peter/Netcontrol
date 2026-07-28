@@ -1,4 +1,5 @@
-const API_USERS = "http://127.0.0.1:8080/auth/users";
+const API_URL = window.API_BASE || window.location.origin;
+const API_USERS = `${API_URL}/auth/users`;
 
 async function fetchUsers() {
   const token = localStorage.getItem("token");

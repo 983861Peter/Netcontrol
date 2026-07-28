@@ -1,3 +1,5 @@
+const API_URL = window.API_BASE || (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin);
+
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
   initializePasswordToggles();
@@ -15,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-        const response = await fetch("http://127.0.0.1:8080/auth/login", {
+        const response = await fetch(`${API_URL}/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",

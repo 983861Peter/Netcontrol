@@ -1,9 +1,11 @@
+const API_URL = window.API_BASE || (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin);
+
 async function api(path, opts = {}) {
     opts.headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + localStorage.getItem("token")
     };
-    return fetch("http://localhost:8080" + path, opts);
+    return fetch(`${API_URL}${path}`, opts);
 }
 
 async function sendInvite() {

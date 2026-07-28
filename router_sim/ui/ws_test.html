@@ -5,7 +5,9 @@
 <pre id="out"></pre>
 <script>
 const out = document.getElementById("out");
-const ws = new WebSocket("ws://localhost:8080/ws/monitor");
+const backendOrigin = window.API_BASE || (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin);
+const wsProtocol = backendOrigin.startsWith("https") ? "wss" : "ws";
+const ws = new WebSocket(`${wsProtocol}://${backendOrigin.replace(/^https?:\/\//, "")}/ws/monitor`);
 ws.onopen = () => out.textContent += "connected\n";
 ws.onmessage = e => out.textContent += e.data + "\n\n";
 ws.onclose = () => out.textContent += "closed\n";

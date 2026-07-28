@@ -266,8 +266,8 @@ function handleMonitorMessage(msg) {
 }
 
 function getDeviceIcon(model){
-   // ensure API_URL is the API server where static is mounted (you said API on port 8080)
-  const base = API_URL || "http://127.0.0.1:3000";
+   // ensure API_URL is the API server where static is mounted
+  const base = API_URL || (window.location.port === "3000" ? "http://127.0.0.1:8080" : window.location.origin);
   if(!model) return `${base}/static/icons/default.jpg`;
 
   const m = String(model).toLowerCase();
