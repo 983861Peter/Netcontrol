@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Alerts</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><div class="logo">NetControl</div></div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="location.href='index.html'">🏠</button>
+      <button class="icon-btn" id="btnLogout3">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Alerts</h4>
+      <a class="nav-link active" href="index.html">Overview</a>
+      <a class="nav-link" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+    </aside>
+
+    <main class="content">
+      <div class="header-row">
+        <h2>Event Feed</h2>
+        <div class="row">
+          <select id="severityFilter" class="input small" style="width:160px">
+            <option value="ALL">All</option><option value="INFO">Info</option><option value="NOTICE">Notice</option>
+            <option value="WARNING">Warning</option><option value="ALERT">Alert</option><option value="CRITICAL">Critical</option>
+          </select>
+          <input id="searchInput" class="input small" placeholder="Search message or device" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="alertFeed"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modalRoot"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script src="alerts.js"></script>
+</body>
+</html>

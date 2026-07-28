@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<body>
+<h3>WS Monitor Test</h3>
+<pre id="out"></pre>
+<script>
+const out = document.getElementById("out");
+const ws = new WebSocket("ws://localhost:8080/ws/monitor");
+ws.onopen = () => out.textContent += "connected\n";
+ws.onmessage = e => out.textContent += e.data + "\n\n";
+ws.onclose = () => out.textContent += "closed\n";
+ws.onerror = e => out.textContent += "error\n";
+</script>
+</body>
+</html>

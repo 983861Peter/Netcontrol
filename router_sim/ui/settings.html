@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Settings</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><div class="logo">NetControl</div></div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="location.href='index.html'">🏠</button>
+      <button class="icon-btn" id="btnLogout4">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Settings</h4>
+      <a class="nav-link active" href="index.html">Overview</a>
+      <a class="nav-link" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+    </aside>
+
+    <main class="content">
+      <div class="header-row"><h2>Controller Settings</h2></div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="title">General</div>
+          <label for="ctrlName" class="muted small">Controller Name</label>
+          <input id="ctrlName" class="input" placeholder="NetControl" value="NetControl-Primary" />
+          <label class="muted small" style="margin-top:8px">Scan Interval (seconds)</label>
+          <input id="scanInterval" class="input" type="number" placeholder="60" />
+          <div style="margin-top:12px" class="actions">
+            <button id="saveSettings" class="btn">Save</button>
+            <button id="exportConfig" class="btn ghost">Export Config</button>
+          </div>
+        </div>
+
+        <!-- Company Settings -->
+        <div class="card">
+          <div class="title">Company Settings</div>
+          <p class="muted small">Default network parameters for adopted devices.</p>
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
+            <div><label class="muted small">Primary DNS</label><input id="set_dns1" class="input" placeholder="8.8.8.8"></div>
+            <div><label class="muted small">Secondary DNS</label><input id="set_dns2" class="input" placeholder="8.8.4.4"></div>
+            <div><label class="muted small">NTP Server</label><input id="set_ntp" class="input" placeholder="pool.ntp.org"></div>
+            <div><label class="muted small">Syslog Server</label><input id="set_syslog" class="input" placeholder="192.168.1.50"></div>
+            <div><label class="muted small">SNMP Community</label><input id="set_snmp" class="input" placeholder="public"></div>
+            <div><label class="muted small">Domain Name</label><input id="set_domain" class="input" placeholder="corp.local"></div>
+            <div><label class="muted small">Admin Username</label><input id="set_admin" class="input" placeholder="admin"></div>
+            <div><label class="muted small">Management ACL</label><input id="set_acl" class="input" placeholder="10.0.0.0/8"></div>
+          </div>
+          <div style="margin-top:20px; text-align:right;">
+            <button class="btn" onclick="saveCompanyDefaults()">Save Company Defaults</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Defaults for New Devices</div>
+          <label class="muted small">Default SSID</label>
+          <input id="defSsid" class="input" placeholder="MyISP-Guest"/>
+          <label class="muted small" style="margin-top:8px">Default WiFi Password</label>
+          <input id="defPass" class="input" placeholder="changeme" />
+        </div>
+
+        <div class="card">
+          <div class="title">Firewall & Security</div>
+          <label class="muted small">Enable Firewall</label>
+          <input id="enableFirewall" type="checkbox" />
+          <label class="muted small" style="margin-top:8px">Blocked Ports (comma-separated)</label>
+          <input id="blockedPorts" class="input" placeholder="22,80,443" />
+          <label class="muted small" style="margin-top:8px">Security Policies</label>
+          <textarea id="securityPolicies" class="input" rows="3" placeholder="Enter security policies..."></textarea>
+        </div>
+
+        <div class="card">
+          <div class="title">VPN</div>
+          <label class="muted small">Enable VPN</label>
+          <input id="enableVpn" type="checkbox" />
+          <label class="muted small" style="margin-top:8px">VPN Server Address</label>
+          <input id="vpnServer" class="input" placeholder="vpn.example.com" />
+          <label class="muted small" style="margin-top:8px">VPN Port</label>
+          <input id="vpnPort" class="input" type="number" placeholder="1194" />
+          <label class="muted small" style="margin-top:8px">VPN Protocol</label>
+          <select id="vpnProtocol" class="input">
+            <option value="openvpn">OpenVPN</option>
+            <option value="wireguard">WireGuard</option>
+            <option value="pptp">PPTP</option>
+          </select>
+        </div>
+
+        <div class="card">
+          <div class="title">System Settings</div>
+          <div class="subsection">
+            <label class="muted small">Web Application UI Updates</label>
+            <div style="margin-top:4px">
+              <input type="radio" id="uiAutoAdapt" name="uiUpdates" value="auto" checked />
+              <label for="uiAutoAdapt">Automatically adapt</label><br>
+              <input type="radio" id="uiRealtime" name="uiUpdates" value="realtime" />
+              <label for="uiRealtime">Always use real-time updates</label><br>
+              <input type="radio" id="uiDisable" name="uiUpdates" value="disable" />
+              <label for="uiDisable">Disable real-time updates</label>
+            </div>
+          </div>
+          <div class="subsection" style="margin-top:12px">
+            <label class="muted small">Debug Tools</label>
+            <div class="switch-row">
+               <input id="enableDebug" type="checkbox" />
+               <label for="enableDebug">Enable debug logging</label>
+            </div>
+          </div>
+          <div class="subsection" style="margin-top:12px">
+            <label class="muted small">Email Services</label>
+            <input id="smtpServer" class="input" placeholder="smtp.gmail.com" />
+            <input id="smtpPort" class="input" type="number" placeholder="587" style="margin-top:4px" />
+            <input id="smtpUser" class="input" placeholder="user@example.com" style="margin-top:4px" />
+            <input id="smtpPass" class="input" type="password" placeholder="password" style="margin-top:4px" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Device Templates Section -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="title">Device Configuration Templates</div>
+        <p class="muted small">Base configuration templates applied during device adoption.</p>
+        
+        <div class="tabs" style="margin-top:15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <button class="btn small ghost active" id="btn-tpl-router" onclick="loadTemplate('router')">Router</button>
+          <button class="btn small ghost" id="btn-tpl-switch" onclick="loadTemplate('switch')">Switch</button>
+          <button class="btn small ghost" id="btn-tpl-firewall" onclick="loadTemplate('firewall')">Firewall</button>
+          <button class="btn small ghost" id="btn-tpl-wireless" onclick="loadTemplate('wireless')">Wireless</button>
+        </div>
+
+        <div style="margin-top:15px;">
+          <label class="muted small" id="tpl_label">Router Configuration Template</label>
+          <textarea id="tpl_content" class="input code-block" style="height:300px; font-family:monospace; margin-top:5px; display:block;"></textarea>
+        </div>
+
+        <div class="row" style="justify-content:space-between; margin-top:15px;">
+          <button class="btn ghost" onclick="resetTemplate()">Reset to System Default</button>
+          <button class="btn" onclick="saveTemplate()">Save Template</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px" class="card">
+        <div class="title">Controller Actions</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn danger" id="factoryResetController">Factory Reset Controller</button>
+          <button class="btn ghost" id="clearBackups">Clear Backups</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modalRoot"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

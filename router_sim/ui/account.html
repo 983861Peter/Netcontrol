@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Account</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">NetControl</div>
+      <div class="muted small px">Controller</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="Settings" onclick="location.href='settings.html'">⚙️</button>
+      <button class="icon-btn" id="btnLogout" title="Logout">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Menu</h4>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link active" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+    </aside>
+
+    <main class="content">
+      <div class="header-row">
+        <h2>My Account</h2>
+      </div>
+
+      <div class="grid">
+        <!-- Profile Info -->
+        <div class="card" style="flex: 0 0 320px; height: fit-content;">
+          <div class="title">Profile</div>
+          <div style="text-align:center; padding: 20px 0;">
+            <div style="width:80px; height:80px; background:#eef2f6; color:#64748b; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:12px;">
+              👤
+            </div>
+            <h3 id="accountUsername">Admin</h3>
+            <div class="muted small" id="accountRole">Administrator</div>
+          </div>
+          <div class="subsection">
+            <label class="muted small">Status</label>
+            <div style="color:#10b981">● Active</div>
+          </div>
+          <div class="subsection" style="margin-top:12px;">
+            <label class="muted small">Email</label>
+            <div id="accountEmail" style="font-weight:500; color:#e7f0fb;">-</div>
+          </div>
+          <div class="subsection" style="margin-top:12px;">
+            <label class="muted small">Phone</label>
+            <div id="accountPhone" style="font-weight:500; color:#e7f0fb;">-</div>
+          </div>
+          <div class="subsection" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">
+            <label class="muted small">Company</label>
+            <div id="companyNameDisplay" style="font-weight:500; color:#e7f0fb;">NetControl Systems Inc.</div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="flex:1; display:flex; flex-direction:column; gap:14px; min-width:300px;">
+          
+          <!-- Team Management -->
+          <div class="card">
+            <div class="title">Team Management</div>
+            <p class="muted small" style="margin-bottom:16px">Invite a new user to the organization. They will receive a link to set their password.</p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label class="muted small">Full Name</label>
+                <input id="invName" class="input" placeholder="e.g. John Doe">
+              </div>
+              <div>
+                <label class="muted small">Alias (Username)</label>
+                <input id="invAlias" class="input" placeholder="e.g. jdoe">
+              </div>
+              <div>
+                <label class="muted small">Email</label>
+                <input id="invEmail" class="input" placeholder="john@example.com">
+              </div>
+              <div>
+                <label class="muted small">Phone</label>
+                <input id="invPhone" class="input" placeholder="+1 555 0199">
+              </div>
+            </div>
+            
+            <div style="margin-bottom:16px;">
+              <label class="muted small">Role</label>
+              <select id="invRole" class="input">
+                <option value="technician">Technician</option>
+                <option value="admin">Administrator</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+
+            <div class="actions">
+              <button class="btn" id="btnGenerateInvite">Generate Invitation Link</button>
+            </div>
+
+            <div id="inviteOutput" class="subsection hidden" style="margin-top:16px; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+              <label class="muted small" style="color:#33d39f">Invitation Generated</label>
+              <div class="row" style="margin-top:4px;">
+                <input id="inviteToken" class="input" readonly style="font-family:monospace; font-size:12px; color:#33d39f; border-color:#33d39f33;">
+                <button class="btn ghost small" onclick="navigator.clipboard.writeText(document.getElementById('inviteToken').value); UI.toaster.push('success', 'Copied to clipboard')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Settings -->
+          <div class="card">
+            <div class="title">Security Settings</div>
+            <div class="subsection">
+              <label class="muted small">Change Password</label>
+              <div style="display:grid; gap:12px; max-width:400px; margin-top:8px;">
+                <input type="password" class="input" placeholder="Current Password">
+                <input type="password" class="input" placeholder="New Password">
+                <input type="password" class="input" placeholder="Confirm New Password">
+                <div><button class="btn">Update Password</button></div>
+              </div>
+            </div>
+            <div class="subsection" style="margin-top:24px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
+              <label class="muted small">Session</label>
+              <p style="margin-bottom:12px;">Sign out of your current session.</p>
+              <button class="btn danger" id="btnPageLogout">Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports & Analytics Section -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="title">Admin Reports & Analytics</div>
+        
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px; display:flex; flex-wrap:wrap;">
+            <!-- Usage & Trends -->
+            <div class="subsection" style="flex:1; min-width:300px; border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:8px;">
+                <h4 style="margin-bottom:10px; color:var(--text-primary);">Usage & Trends</h4>
+                <div id="usageStats" class="muted small" style="margin-bottom:15px; line-height:1.6;">Loading...</div>
+                <canvas id="accountUsageChart" height="180" style="width:100%; margin-bottom:15px;"></canvas>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn small ghost" onclick="exportReport(event, 'usage', 'csv', true)">Preview CSV</button>
+                  <button class="btn small ghost admin-only-btn" onclick="exportReport(event, 'usage', 'pdf', true)">Preview PDF</button>
+                </div>
+            </div>
+
+            <!-- Compliance -->
+            <div class="subsection" style="flex:1; min-width:300px; border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:8px;">
+                <h4 style="margin-bottom:10px; color:var(--text-primary);">Compliance Status</h4>
+                <div id="complianceStats" class="muted small" style="margin-bottom:15px; line-height:1.6;">Loading...</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn small ghost" onclick="exportReport(event, 'compliance', 'csv', true)">Preview CSV</button>
+                  <button class="btn small ghost admin-only-btn" onclick="exportReport(event, 'compliance', 'pdf', true)">Preview PDF</button>
+                </div>
+            </div>
+
+            <!-- Users Report - NEW -->
+            <div class="subsection" style="flex:1; min-width:300px; border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:8px;">
+                <h4 style="margin-bottom:10px; color:var(--text-primary);">User Accounts</h4>
+                <div id="userStats" class="muted small" style="margin-bottom:15px; line-height:1.6;">Loading...</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn small ghost admin-only-btn" onclick="exportReport(event, 'users', 'csv', true)">Preview CSV</button>
+                  <button class="btn small ghost admin-only-btn" onclick="exportReport(event, 'users', 'pdf', true)">Preview PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <h4 style="margin-bottom:10px; color:var(--text-primary);">Schedule Reports</h4>
+            <div class="row" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <select id="sched_type" class="input" style="width: 150px;"><option value="usage">Usage Report</option><option value="compliance">Compliance Report</option></select>
+                <select id="sched_freq" class="input" style="width: 150px;"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+                <input id="sched_email" class="input" placeholder="Email address" style="width: 200px;">
+                <button class="btn" onclick="scheduleReport()">Schedule</button>
+            </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modalRoot"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script src="analytics.js"></script>
+  <script src="account.js"></script>
+  <script>
+    // Simple script to handle page-specific logic
+    document.addEventListener('DOMContentLoaded', () => {
+      // Try to populate username from localStorage if available
+      const storedUser = localStorage.getItem('username');
+      if (storedUser) {
+        document.getElementById('accountUsername').textContent = storedUser;
+      }
+
+      // Fetch user details to get company name and role
+      apiFetch('/me').then(res => {
+        if (res.ok) {
+          return res.json();
+        }
+      }).then(user => {
+        if (!user) return;
+
+        if (user.company_name) {
+          const companyDiv = document.getElementById('companyNameDisplay');
+          if (companyDiv) {
+            companyDiv.textContent = user.company_name;
+          }
+        }
+        if (user.role) {
+            document.getElementById('accountRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+        }
+        if (user.email) {
+          document.getElementById('accountEmail').textContent = user.email;
+        }
+        if (user.phone_number) {
+          document.getElementById('accountPhone').textContent = user.phone_number;
+        } else {
+          document.getElementById('accountPhone').textContent = 'Not provided';
+        }
+      }).catch(err => console.error("Failed to fetch user details:", err));
+      
+      // Bind page logout button to the same logic as the topbar logout
+      const btnPageLogout = document.getElementById('btnPageLogout');
+      const btnLogout = document.getElementById('btnLogout');
+      
+      if (btnPageLogout && btnLogout) {
+        btnPageLogout.addEventListener('click', () => {
+          btnLogout.click();
+        });
+      }
+
+      // Handle Invitation Generation
+      const btnInvite = document.getElementById('btnGenerateInvite');
+      if (btnInvite) {
+        btnInvite.addEventListener('click', async () => {
+          const name = document.getElementById('invName').value;
+          const alias = document.getElementById('invAlias').value;
+          const email = document.getElementById('invEmail').value;
+          const phone = document.getElementById('invPhone').value;
+          const role = document.getElementById('invRole').value;
+
+          if (!name || !alias || !email) {
+            UI.toaster.push('error', 'Please fill in Name, Alias and Email.');
+            return;
+          }
+
+          // Call backend to generate invite
+          try {
+            const res = await apiFetch('/auth/invite', {
+              method: 'POST',
+              body: JSON.stringify({
+                full_name: name,
+                alias: alias,
+                email: email,
+                phone: phone,
+                role: role
+              })
+            });
+            
+            if (res.ok) {
+              const data = await res.json();
+              const link = new URL('register.html', window.location.href).href + `?token=${data.token}`;
+              document.getElementById('inviteToken').value = link;
+              document.getElementById('inviteOutput').classList.remove('hidden');
+              UI.toaster.push('success', `Invitation generated for ${alias}`);
+            } else {
+              const err = await res.json();
+              UI.toaster.push('error', err.detail || 'Failed to generate invite');
+            }
+          } catch (e) {
+            console.error("Invite error:", e);
+            UI.toaster.push('error', 'Connection error');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

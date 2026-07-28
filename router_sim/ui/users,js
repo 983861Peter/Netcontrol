@@ -1,0 +1,84 @@
+const API_USERS = "http://127.0.0.1:8080/auth/users";
+
+async function fetchUsers() {
+  const token = localStorage.getItem("token");
+  const res = await fetch(API_USERS, { headers: { "Authorization": `Bearer ${token}` } });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById("userTableBody");
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.username}</td>
+      <td>${u.role}</td>
+      <td>${u.is_active ? "✅" : "❌"}</td>
+      <td>
+        Add: ${u.can_add_device ? "✅" : "❌"} |
+        Del: ${u.can_delete_device ? "✅" : "❌"} |
+        Conf: ${u.can_configure_device ? "✅" : "❌"} |
+        Reboot: ${u.can_restart_device ? "✅" : "❌"}
+      </td>
+      <td><button class="delete-btn" onclick="deleteUser(${u.id})">🗑 Delete</button></td>
+    </tr>
+  `).join("");
+}
+
+async function deleteUser(id) {
+  if (!confirm("Delete this user?")) return;
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_USERS}/${id}`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (res.ok) location.reload();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const role = localStorage.getItem("role");
+  if (role !== "admin") {
+    alert("Access denied");
+    window.location.href = "dashboard_technician.html";
+    return;
+  }
+
+  const users = await fetchUsers();
+  renderUsers(users);
+
+  const modal = document.getElementById("userModal");
+  const addUserBtn = document.getElementById("addUserBtn");
+  const closeModal = document.getElementById("closeModal");
+
+  addUserBtn.onclick = () => modal.style.display = "flex";
+  closeModal.onclick = () => modal.style.display = "none";
+
+  document.getElementById("userForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const payload = {
+      username: document.getElementById("username").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value,
+      role: document.getElementById("role").value
+    };
+
+    const token = localStorage.getItem("token");
+    const res = await fetch(API_USERS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      alert("User created successfully");
+      modal.style.display = "none";
+      location.reload();
+    } else {
+      const err = await res.json();
+      alert(err.detail || "Error creating user");
+    }
+  });
+});

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Account</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">NetControl</div>
+      <div class="muted small px">Controller</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="Settings" onclick="location.href='settings.html'">⚙️</button>
+      <button class="icon-btn" id="btnLogout" title="Logout">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Menu</h4>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link active" href="technician_dashboard.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+    </aside>
+
+    <main class="content">
+      <div class="header-row">
+        <h2>My Account</h2>
+      </div>
+
+      <div class="grid">
+        <!-- Profile Info -->
+        <div class="card" style="flex: 0 0 320px; height: fit-content;">
+          <div class="title">Profile</div>
+          <div style="text-align:center; padding: 20px 0;">
+            <div style="width:80px; height:80px; background:#eef2f6; color:#64748b; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:12px;">
+              👤
+            </div>
+            <h3 id="accountUsername">Technician</h3>
+            <div class="muted small" id="accountRole">Technician</div>
+          </div>
+          <div class="subsection">
+            <label class="muted small">Status</label>
+            <div style="color:#10b981">● Active</div>
+          </div>
+          <div class="subsection" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">
+            <label class="muted small">Company</label>
+            <div id="companyNameDisplay" style="font-weight:500; color:#e7f0fb;">NetControl Systems Inc.</div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="flex:1; display:flex; flex-direction:column; gap:14px; min-width:300px;">
+          
+          <!-- Security Settings -->
+          <div class="card">
+            <div class="title">Security Settings</div>
+            <div class="subsection">
+              <label class="muted small">Change Password</label>
+              <div style="display:grid; gap:12px; max-width:400px; margin-top:8px;">
+                <input type="password" class="input" placeholder="Current Password">
+                <input type="password" class="input" placeholder="New Password">
+                <input type="password" class="input" placeholder="Confirm New Password">
+                <div><button class="btn">Update Password</button></div>
+              </div>
+            </div>
+            <div class="subsection" style="margin-top:24px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
+              <label class="muted small">Session</label>
+              <p style="margin-bottom:12px;">Sign out of your current session.</p>
+              <button class="btn danger" id="btnPageLogout">Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modalRoot"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const storedUser = localStorage.getItem('username');
+      if (storedUser) document.getElementById('accountUsername').textContent = storedUser;
+
+      apiFetch('/me').then(res => res.ok ? res.json() : null).then(data => {
+        if (data) {
+          if (data.company_name) document.getElementById('companyNameDisplay').textContent = data.company_name;
+          if (data.role) document.getElementById('accountRole').textContent = data.role.charAt(0).toUpperCase() + data.role.slice(1);
+        }
+      }).catch(console.error);
+      
+      const btnPageLogout = document.getElementById('btnPageLogout');
+      const btnLogout = document.getElementById('btnLogout');
+      if (btnPageLogout && btnLogout) btnPageLogout.addEventListener('click', () => btnLogout.click());
+    });
+  </script>
+</body>
+</html>

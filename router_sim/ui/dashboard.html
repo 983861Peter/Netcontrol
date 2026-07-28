@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Dashboard</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <script src="navbar.js"></script>
+
+  <div class="container">
+    <h1>Network Devices</h1>
+    <div class="toolbar">
+      <button id="addDeviceBtn" class="primary-btn admin-only">+ Add Device</button>
+      <button id="scanBtn" class="secondary-btn">Scan Network</button>
+    </div>
+
+    <div class="device-grid" id="deviceGrid"></div>
+  </div>
+
+  <!-- Add Device Modal -->
+  <div id="deviceModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal">&times;</span>
+      <h2>Add New Device</h2>
+      <form id="deviceForm">
+        <input type="text" id="deviceName" placeholder="Device Name" required>
+        <select id="deviceType">
+          <option value="dlink">D-Link Router</option>
+          <option value="ruijie">Ruijie Router</option>
+          <option value="tp-link">TP-Link Router</option>
+          <option value="cisco">Cisco Device</option>
+        </select>
+        <select id="connectionType">
+          <option value="dhcp">DHCP</option>
+          <option value="static">Static</option>
+          <option value="pppoe">PPPoE</option>
+        </select>
+        <input type="text" id="ipAddress" placeholder="IP Address (Optional)">
+        <button type="submit" class="primary-btn">Add Device</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toastContainer"></div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

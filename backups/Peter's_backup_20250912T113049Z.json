@@ -1,0 +1,24 @@
+{
+  "device_id": "Peter's",
+  "ts": "2025-09-12T11:30:49.855082Z",
+  "config": {
+    "hostname": "Peter's",
+    "interfaces": {
+      "lan": {
+        "ip": "192.168.4.152",
+        "netmask": "255.255.255.0"
+      },
+      "wan": {
+        "ip": null,
+        "netmask": null
+      }
+    },
+    "dhcp": {
+      "enabled": true,
+      "range_start": "192.168.1.100",
+      "range_end": "192.168.1.200"
+    },
+    "ssid": "DefaultSSID",
+    "wifi_password": "changeme"
+  }
+}

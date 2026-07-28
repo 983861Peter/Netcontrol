@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Devices</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><div class="logo">NetControl</div></div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="location.href='index.html'">🏠</button>
+      <button class="icon-btn" id="btnLogout2">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Devices</h4>
+      <a class="nav-link active" href="index.html">Overview</a>
+      <a class="nav-link" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+      <div style="margin-top:12px">
+        <button class="btn" id="openAddModal">+ Add Device</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="header-row">
+        <h2>Device Management</h2>
+        <div class="row">
+          <input id="filterDevice" class="input" placeholder="Search devices..." style="width:280px">
+          <button class="btn ghost" id="btnRefresh">Refresh</button>
+          <button class="btn ghost" onclick="viewBackups()">View Backups</button>
+          <button class="btn" id="btnScanUI">Scan Network</button>
+        </div>
+      </div>
+
+      <div class="grid" style="align-items: flex-start;">
+        <div class="card" style="flex:1 1 48%; min-width: 400px;">
+            <div class="title">Discovered Devices</div>
+            <div id="scanStatus" class="muted small" style="margin-bottom:8px">Ready</div>
+            <table class="table" id="discoveredTable">
+                <thead><tr><th>IP</th><th>MAC</th><th>Vendor</th><th>Title</th><th>State</th><th>Action</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="card" style="flex: 1 1 48%; min-width: 300px;">
+            <div class="title">Technician Tools</div>
+            <p class="muted small" style="margin-bottom:16px;">Run network diagnostics against any IP address.</p>
+            <div class="row" style="gap:8px; flex-wrap:wrap;">
+                <button class="btn" onclick="openPingTool()">Ping</button>
+                <button class="btn" onclick="openTracerouteTool()">Traceroute</button>
+                <button class="btn ghost" onclick="document.getElementById('btnScanUI').click()">Discovery Scan</button>
+            </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="title">Registered Devices</div>
+        <table class="table" id="deviceTable">
+          <thead><tr><th id="th-id" style="width:40px; cursor:pointer" onclick="sortDevices('id')">ID ↕</th><th style="width:40px"></th><th id="th-ssid" style="cursor:pointer" onclick="sortDevices('ssid')">SSID ↕</th><th id="th-ip" style="cursor:pointer" onclick="sortDevices('ip')">IP ↕</th><th id="th-mac" style="cursor:pointer" onclick="sortDevices('mac')">MAC ↕</th><th id="th-model" style="cursor:pointer" onclick="sortDevices('model')">Model ↕</th><th>Status</th><th>Clients</th><th>RX</th><th>TX</th><th>Client</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Device side panel (hidden until opened) -->
+<div id="deviceSidePanel" class="side-panel" style="display:none;position:fixed;right:0;top:48px;bottom:0;width:420px;background:#071126;box-shadow:-6px 0 20px rgba(0,0,0,0.08);padding:16px;overflow:auto;z-index:1200">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 id="panelDeviceName">Device</h3>
+    <button class="btn ghost small" onclick="closeDevicePanel()">Close</button>
+  </div>
+  <div id="panelContent" style="margin-top:8px"></div>
+</div>
+<style>
+.side-panel img.device-icon { width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #eee }
+.side-panel .muted { color:#666 }
+.side-panel .action-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap }
+</style>
+
+  <div id="modalRoot"></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script src="devices.js"></script>
+</body>
+</html>

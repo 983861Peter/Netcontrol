@@ -1,0 +1,93 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(120deg, #1a1a40, #2b5876);
+  color: white;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 90%;
+  margin: 20px auto;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-btn {
+  background: crimson;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profile-card {
+  text-align: center;
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px auto;
+  width: 250px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+.profile-card img {
+  width: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#usersTable {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+}
+
+#usersTable th, #usersTable td {
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding: 10px;
+  text-align: center;
+}
+
+button {
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 12px;
+  width: 300px;
+}
+
+.hidden { display: none; }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: limegreen;
+  padding: 10px 15px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}

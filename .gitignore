@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Flutter / Dart
+router_mobile_app/build/
+router_mobile_app/.dart_tool/
+router_mobile_app/.packages
+router_mobile_app/.idea/
+router_mobile_app/.gradle/
+
+# OS
+Thumbs.db
+.DS_Store

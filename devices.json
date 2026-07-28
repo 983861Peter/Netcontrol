@@ -1,0 +1,156 @@
+{
+  "Peter's": {
+    "device_id": "Peter's",
+    "ip": "192.168.4.152",
+    "model": "Ruijie",
+    "status": "online",
+    "credentials": null,
+    "config": {
+      "hostname": "Peter's",
+      "interfaces": {
+        "lan": {
+          "ip": "192.168.4.152",
+          "netmask": "255.255.255.0"
+        },
+        "wan": {
+          "ip": null,
+          "netmask": null
+        }
+      },
+      "dhcp": {
+        "enabled": true,
+        "range_start": "192.168.1.100",
+        "range_end": "192.168.1.200"
+      },
+      "ssid": "DefaultSSID",
+      "wifi_password": "changeme"
+    },
+    "config_history": [
+      {
+        "ts": "2025-09-12T11:25:35.681005Z",
+        "note": "initial",
+        "config": {
+          "hostname": "Peter's",
+          "interfaces": {
+            "lan": {
+              "ip": "192.168.4.152",
+              "netmask": "255.255.255.0"
+            },
+            "wan": {
+              "ip": null,
+              "netmask": null
+            }
+          },
+          "dhcp": {
+            "enabled": true,
+            "range_start": "192.168.1.100",
+            "range_end": "192.168.1.200"
+          },
+          "ssid": "DefaultSSID",
+          "wifi_password": "changeme"
+        }
+      },
+      {
+        "ts": "2025-09-12T11:47:40.260711Z",
+        "note": "factory_reset",
+        "config": {
+          "hostname": "Peter's",
+          "interfaces": {
+            "lan": {
+              "ip": "192.168.4.152",
+              "netmask": "255.255.255.0"
+            },
+            "wan": {
+              "ip": null,
+              "netmask": null
+            }
+          },
+          "dhcp": {
+            "enabled": true,
+            "range_start": "192.168.1.100",
+            "range_end": "192.168.1.200"
+          },
+          "ssid": "DefaultSSID",
+          "wifi_password": "changeme"
+        }
+      },
+      {
+        "ts": "2025-09-12T11:48:45.600960Z",
+        "note": "restored from Peter's_backup_20250912T113049Z.json",
+        "config": {
+          "hostname": "Peter's",
+          "interfaces": {
+            "lan": {
+              "ip": "192.168.4.152",
+              "netmask": "255.255.255.0"
+            },
+            "wan": {
+              "ip": null,
+              "netmask": null
+            }
+          },
+          "dhcp": {
+            "enabled": true,
+            "range_start": "192.168.1.100",
+            "range_end": "192.168.1.200"
+          },
+          "ssid": "DefaultSSID",
+          "wifi_password": "changeme"
+        }
+      }
+    ]
+  },
+  "ALEX": {
+    "device_id": "ALEX",
+    "ip": "192.168.11.234",
+    "model": "Tenda",
+    "status": "online",
+    "credentials": null,
+    "config": {
+      "hostname": "ALEX",
+      "interfaces": {
+        "lan": {
+          "ip": "192.168.11.234",
+          "netmask": "255.255.255.0"
+        },
+        "wan": {
+          "ip": null,
+          "netmask": null
+        }
+      },
+      "dhcp": {
+        "enabled": true,
+        "range_start": "192.168.1.100",
+        "range_end": "192.168.1.200"
+      },
+      "ssid": "DefaultSSID",
+      "wifi_password": "changeme"
+    },
+    "config_history": [
+      {
+        "ts": "2025-09-15T15:12:07.989096Z",
+        "note": "initial",
+        "config": {
+          "hostname": "ALEX",
+          "interfaces": {
+            "lan": {
+              "ip": "192.168.11.234",
+              "netmask": "255.255.255.0"
+            },
+            "wan": {
+              "ip": null,
+              "netmask": null
+            }
+          },
+          "dhcp": {
+            "enabled": true,
+            "range_start": "192.168.1.100",
+            "range_end": "192.168.1.200"
+          },
+          "ssid": "DefaultSSID",
+          "wifi_password": "changeme"
+        }
+      }
+    ]
+  }
+}

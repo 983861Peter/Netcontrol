@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>API Connectivity Test</title>
+<style>
+    body { font-family: Arial; margin: 20px; }
+    button { padding: 10px; margin: 5px; cursor: pointer; }
+    pre { background: #f3f3f3; padding: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h2>API Connectivity Test</h2>
+
+<button onclick="testRouters()">Test /routers</button>
+<button onclick="testAlerts()">Test /alerts</button>
+<button onclick="testCors()">Test CORS (Preflight)</button>
+
+<h3>Output:</h3>
+<pre id="output">Click a button to test...</pre>
+
+<script>
+const API_BASE = "http://127.0.0.1:8080";
+
+async function testRouters(){
+    try {
+        const res = await fetch(`${API_BASE}/router/list`, { method: "GET" });
+        const data = await res.json();
+        document.getElementById("output").textContent = "✅ /routers response:\n" + JSON.stringify(data, null, 2);
+    } catch (err) {
+        document.getElementById("output").textContent = "❌ Failed to reach /routers:\n" + err;
+    }
+}
+
+async function testAlerts(){
+    try {
+        const res = await fetch(`${API_BASE}/alerts`, { method: "GET" });
+        const data = await res.json();
+        document.getElementById("output").textContent = "✅ /alerts response:\n" + JSON.stringify(data, null, 2);
+    } catch (err) {
+        document.getElementById("output").textContent = "❌ Failed to reach /alerts:\n" + err;
+    }
+}
+
+async function testCors(){
+    try {
+        // Sending a custom header forces the browser to send an OPTIONS preflight request first.
+        const res = await fetch(`${API_BASE}/router/list`, { 
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await res.json();
+        document.getElementById("output").textContent = "✅ CORS Preflight Passed:\n" + JSON.stringify(data, null, 2);
+    } catch (err) {
+        document.getElementById("output").textContent = "❌ CORS Preflight Failed:\n" + err + "\n(Ensure API is running and CORS is enabled)";
+    }
+}
+</script>
+
+</body>
+</html>

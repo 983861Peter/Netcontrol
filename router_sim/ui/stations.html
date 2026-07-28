@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Stations</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><div class="logo">NetControl</div></div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Menu</h4>
+      <a class="nav-link" href="index.html">Overview</a>
+      <a class="nav-link active" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+    </aside>
+    <main class="content">
+      <div class="header-row">
+        <h2>Transmission Stations</h2>
+        <button class="btn" onclick="openAddStationModal()">+ Add Station</button>
+      </div>
+      <div id="stationList" class="grid"></div>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script>
+    async function loadStations() {
+      const res = await apiFetch('/stations');
+      const stations = await res.json();
+      
+      // Fetch all devices to count connected devices
+      let connectedDevicesCount = {};
+      try {
+        const devRes = await apiFetch('/devices');
+        if (devRes.ok) {
+          const allDevices = await devRes.json();
+          // Count devices connected to each station
+          stations.forEach(station => {
+            connectedDevicesCount[station.id] = allDevices.filter(d => d.station_id == station.id).length;
+          });
+        }
+      } catch (e) {
+        console.error('Failed to fetch devices for device count:', e);
+      }
+      
+      window._stationsCache = stations;
+      const container = document.getElementById('stationList');
+      container.innerHTML = stations.map(s => `
+        <div class="card" onclick="openStationDetails(${s.id})" style="cursor:pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.boxShadow=''">
+          <div class="title">${s.name} <span class="tag">${s.station_type || 'primary'}</span> ${s.is_gateway ? '<span class="tag" style="border-color:var(--success); color:var(--success)">Gateway</span>' : ''}</div>
+          <div class="muted small">${s.location || 'No location'} — <span style="color:#fff">${s.device_model || 'Standard Tower'}</span></div>
+          <div class="subsection" style="margin-top:10px">
+            <strong>Station Devices:</strong>
+            <ul>${s.sectors.map(sec => `<li>${sec.name}</li>`).join('')}</ul>
+            <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span class="muted small">Connected Devices: ${connectedDevicesCount[s.id] || 0}</span>
+              <button class="btn ghost small" onclick="event.stopPropagation(); addDevice(${s.id})">Add Device</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function openStationDetails(stationId) {
+      try {
+        // Fetch station details
+        const stations = window._stationsCache || [];
+        const station = stations.find(s => s.id === stationId);
+        
+        if (!station) {
+          UI.toaster.push('error', 'Station not found');
+          return;
+        }
+
+        // Get all sector IDs for this station
+        const sectorIds = (station.sectors || []).map(s => s.id);
+
+        // Fetch all devices
+        const devRes = await apiFetch('/devices');
+        if (!devRes.ok) {
+          UI.toaster.push('error', 'Failed to fetch devices');
+          return;
+        }
+        const allDevices = await devRes.json();
+
+        // Filter radios connected to this station's sectors
+        const connectedRadios = allDevices.filter(d => 
+          (d.device_type || '').toLowerCase() === 'radio' && d.sector_id && sectorIds.some(sId => String(sId) === String(d.sector_id))
+        );
+
+        // Filter other devices connected to this station
+        const otherDevices = allDevices.filter(d => String(d.station_id) === String(station.id) && d.device_type !== 'radio' && d.device_type !== 'sector');
+        
+        // Store device data for edit/delete operations
+        window._stationDevices = {};
+        otherDevices.forEach(d => {
+          window._stationDevices[d.device_id] = d;
+        });
+
+        // Build HTML for connected radios
+        let radiosHtml = '';
+        if (connectedRadios.length > 0) {
+          radiosHtml = `
+            <div class="subsection-title">Connected Client Radios (${connectedRadios.length})</div>
+            <table class="table" style="width:100%; margin-top:10px; font-size:13px;">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Sector</th>
+                  <th>Model</th>
+                  <th>MAC Address</th>
+                  <th>Status</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${connectedRadios.map(r => {
+                  const sector = station.sectors.find(s => s.id === r.sector_id);
+                  const statusColor = r.status === 'online' ? '#34d399' : '#f87171';
+                  return `
+                    <tr>
+                      <td><b onclick="event.stopPropagation(); openDevicePanel('${r.device_id}')" style="cursor:pointer; text-decoration:underline;">${r.name || r.device_id}</b></td>
+                      <td>${sector ? sector.name : 'Unknown'}</td>
+                      <td>${r.model || '—'}</td>
+                      <td><code>${r.mac_address || '—'}</code></td>
+                      <td><span style="color:${statusColor}">● ${r.status || 'unknown'}</span></td>
+                      <td>${r.ip_address || '—'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          radiosHtml = '<div class="muted small" style="margin-top:12px; padding:12px; background:rgba(255,255,255,0.05); border-radius:4px;">No client radios connected to this station yet</div>';
+        }
+
+        // Build HTML for other devices
+        let otherDevicesHtml = '';
+        if (otherDevices.length > 0) {
+          otherDevicesHtml = `
+            <div class="subsection-title">Other Devices (${otherDevices.length})</div>
+            <div style="overflow-x:auto;">
+              <table class="table" style="width:100%; margin-top:10px; font-size:12px; min-width:900px;">
+                <thead>
+                  <tr>
+                    <th>Name</th> 
+                    <th>Type</th>
+                    <th>Model</th>
+                    <th>MAC Address</th>
+                    <th>Status</th>
+                    <th>IP Config</th>
+                    <th>IP Address</th>
+                    <th style="text-align:center; width:80px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${otherDevices.map(d => {
+                    const statusColor = d.status === 'online' ? '#34d399' : '#f87171';
+                    const ipConfig = d.ip_type === 'static' ? `Static: ${d.ip_address || '—'}/${d.netmask || '—'}` : 
+                                      d.ip_type === 'pppoe' ? `PPPoE: ${d.pppoe_username || '—'}` : 'DHCP';
+                    return `
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <td><b>${d.name || d.device_id}</b></td>
+                        <td>${d.device_type || 'Unknown'}</td>
+                        <td>${d.model || d.device_model || '—'}</td>
+                        <td><code>${d.mac_address || '—'}</code></td>
+                        <td><span style="color:${statusColor}">● ${d.status || 'unknown'}</span></td>
+                        <td><span class="tag">${d.ip_type || 'DHCP'}</span></td>
+                        <td>${d.ip_address || '—'}</td>
+                        <td style="text-align:center; white-space:nowrap;">
+                          <button class="btn ghost small" style="padding:4px 8px; font-size:11px;" onclick="event.stopPropagation(); editStationDevice(${station.id}, '${d.device_id}')">Edit</button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else {
+          otherDevicesHtml = '<div class="muted small" style="margin-top:12px; padding:12px; background:rgba(255,255,255,0.05); border-radius:4px;">No other devices connected to this station</div>';
+        }
+
+        // Build sectors table
+        const sectorsHtml = station.sectors && station.sectors.length > 0 ? `
+          <div class="subsection-title">Station Devices</div>
+          <table class="table" style="width:100%; margin-top:10px; font-size:13px;">
+            <thead>
+              <tr>
+                <th>Sector Name</th>
+                <th>Device Model</th>
+                <th>MAC Address</th>
+                <th>IP Address</th>
+                <th>Horn</th>
+                <th>IP Config</th>
+                <th>Connected Radios</th>
+                <th style="width:92px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${station.sectors.map(sec => {
+                const radiosInSector = connectedRadios.filter(r => r.sector_id === sec.id);
+                return `
+                          <tr style="cursor:pointer;">
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')"><b>${sec.name}</b></td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')">${sec.device_model || '—'}</td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')"><code>${sec.mac_address || '—'}</code></td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')">${sec.ip_address ? sec.ip_address : (sec.ip_type ? sec.ip_type.toUpperCase() : '—')}</td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')">${sec.horn_orientation ? sec.horn_orientation + '°' : '—'}</td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')"><span class="tag">${sec.ip_type || 'DHCP'}</span></td>
+                    <td onclick="event.stopPropagation(); openDevicePanel('SEC-${sec.id}', 'sector')">${radiosInSector.length} radio${radiosInSector.length !== 1 ? 's' : ''}</td>
+                    <td style="width:92px; white-space:normal; padding:8px;">
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <button class="btn ghost small" style="width:100%; padding:6px 8px; font-size:11px;" onclick="event.stopPropagation(); editStationSector(${station.id}, ${sec.id})">Edit</button>
+                        <button class="btn ghost small" style="width:100%; padding:6px 8px; font-size:11px; color:#ef4444; border-color:#ef4444;" onclick="event.stopPropagation(); deleteStationSectorConfirm(${station.id}, ${sec.id}, '${sec.name.replace(/'/g, "\\'")}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        ` : '<div class="muted small">No sectors defined</div>';
+
+        // Show modal with station details
+        UI.modal({
+          wide: true,
+          html: `
+            <h3>${station.name}</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+              <div>
+                <div class="muted small">Station Type</div>
+                <div style="font-weight:600; margin-top:4px;">${station.station_type || 'Primary'}</div>
+              </div>
+              <div>
+                <div class="muted small">Device Model</div>
+                <div style="font-weight:600; margin-top:4px;">${station.device_model || 'Standard Tower'}</div>
+              </div>
+              <div>
+                <div class="muted small">Location</div>
+                <div style="font-weight:600; margin-top:4px;">${station.location || 'Not specified'}</div>
+              </div>
+              <div>
+                <div class="muted small">Gateway</div>
+                <div style="font-weight:600; margin-top:4px; color:${station.is_gateway ? '#34d399' : '#94a3b8'}">${station.is_gateway ? '✓ Yes' : '—'}</div>
+              </div>
+            </div>
+
+            ${sectorsHtml}
+
+            ${radiosHtml}
+
+            ${otherDevicesHtml}
+          `,
+          buttons: [
+            { label: "Close", className: "btn ghost" },
+            { label: "Edit", className: "btn", onClick: () => {
+              openEditStationModal(station);
+            }},
+            { label: "Delete", className: "btn ghost", style: "color: #ef4444;", onClick: () => {
+              deleteStationConfirm(station.id, station.name);
+            }}
+          ]
+        });
+
+      } catch (e) {
+        console.error('Failed to open station details:', e);
+        UI.toaster.push('error', 'Failed to load station details', 3000);
+      }
+    }
+
+    async function openEditStationModal(station) {
+      try {
+        const stations = window._stationsCache || [];
+        
+        UI.modal({
+          html: `
+            <h3>Edit Station: ${station.name}</h3>
+            <label class="muted small">Station Name</label>
+            <input id="editStName" class="input" value="${station.name || ''}" placeholder="Station Name">
+            
+            <label class="muted small" style="margin-top:10px; display:block">Location</label>
+            <input id="editStLoc" class="input" value="${station.location || ''}" placeholder="Location">
+            
+            <label class="muted small" style="margin-top:10px; display:block">Station Type</label>
+            <select id="editStType" class="input" onchange="toggleEditStationLogic()">
+              <option value="primary" ${station.station_type === 'primary' ? 'selected' : ''}>Primary (Gateway)</option>
+              <option value="secondary" ${station.station_type === 'secondary' ? 'selected' : ''}>Secondary (Relay/Node)</option>
+              <option value="backup" ${station.station_type === 'backup' ? 'selected' : ''}>Backup (Redundant Gateway)</option>
+            </select>
+
+            <div id="editParentGroup" style="display:none; margin-top:10px">
+              <label class="muted small">Linked To (Uplink Station)</label>
+              <select id="editStParent" class="input"></select>
+            </div>
+
+            <div id="editLinkDeviceGroup" style="display:none; margin-top:10px">
+              <label class="muted small">Linked via Device (Uplink)</label>
+              <select id="editStLinkDevice" class="input"></select>
+            </div>
+
+            <label class="muted small" style="margin-top:10px; display:block">Station Main Device Type</label>
+            <select id="editStDevice" class="input">
+              <option value="Mikrotik CCR Series" ${station.device_model === 'Mikrotik CCR Series' ? 'selected' : ''}>Mikrotik CCR (Gateway)</option>
+              <option value="Ubiquiti AirFiber 5XHD" ${station.device_model === 'Ubiquiti AirFiber 5XHD' ? 'selected' : ''}>Ubiquiti AirFiber (Backhaul)</option>
+              <option value="Ubiquiti PowerBeam" ${station.device_model === 'Ubiquiti PowerBeam' ? 'selected' : ''}>Ubiquiti PowerBeam</option>
+              <option value="Cambium Force 300" ${station.device_model === 'Cambium Force 300' ? 'selected' : ''}>Cambium Force 300</option>
+              <option value="Siklu EtherHaul" ${station.device_model === 'Siklu EtherHaul' ? 'selected' : ''}>Siklu EtherHaul</option>
+            </select>
+
+            <div style="margin-top:10px">
+              <input type="checkbox" id="editStGateway" ${station.is_gateway ? 'checked' : ''} disabled> <label for="editStGateway">Gateway Entry Point</label>
+            </div>
+          `,
+          buttons: [
+            { label: "Cancel", className: "btn ghost" },
+            { label: "Save Changes", className: "btn", onClick: async () => {
+              const name = document.getElementById('editStName').value.trim();
+              const location = document.getElementById('editStLoc').value.trim();
+              const type = document.getElementById('editStType').value;
+              const parentId = document.getElementById('editStParent').value;
+              const linkDeviceId = document.getElementById('editStLinkDevice').value;
+              const model = document.getElementById('editStDevice').value;
+              
+              if (!name) {
+                UI.toaster.push('error', 'Station name is required');
+                return false;
+              }
+
+              if ((type === 'secondary' || type === 'backup') && !parentId) {
+                UI.toaster.push('error', 'Linked station required for this type');
+                return false;
+              }
+
+              const payload = {
+                name: name,
+                location: location,
+                station_type: type,
+                parent_id: parentId ? parseInt(parentId) : null,
+                link_device_id: linkDeviceId || null,
+                device_model: model,
+                is_gateway: document.getElementById('editStGateway').checked
+              };
+
+              const res = await apiFetch(`/stations/${station.id}`, { 
+                method: 'PUT', 
+                body: JSON.stringify(payload) 
+              });
+
+              if (res.ok) {
+                UI.toaster.push('success', 'Station updated successfully');
+                await loadStations();
+              } else {
+                const error = await res.text();
+                UI.toaster.push('error', `Failed to update station: ${error}`);
+              }
+            }}
+          ]
+        });
+
+        // Populate parent station dropdown based on current type
+        setTimeout(() => toggleEditStationLogic(station.id), 0);
+
+      } catch (e) {
+        console.error('Failed to open edit modal:', e);
+        UI.toaster.push('error', 'Failed to open edit form', 3000);
+      }
+    }
+
+    window.toggleEditStationLogic = (currentStationId) => {
+      const stType = document.getElementById('editStType');
+      const pGroup = document.getElementById('editParentGroup');
+      const pSelect = document.getElementById('editStParent');
+      const gw = document.getElementById('editStGateway');
+
+      if (!stType || !pGroup || !pSelect || !gw) return;
+
+      const type = stType.value;
+      const stations = window._stationsCache || [];
+
+      if (type === 'primary') {
+        pGroup.style.display = 'none';
+        gw.checked = true;
+        gw.disabled = true;
+      } else if (type === 'backup') {
+        pGroup.style.display = 'block';
+        gw.checked = true;
+        gw.disabled = true;
+        const potential = stations.filter(s => String(s.id) !== String(currentStationId));
+        pSelect.innerHTML = potential.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      } else {
+        pGroup.style.display = 'block';
+        gw.checked = false;
+        gw.disabled = false;
+        const potential = stations.filter(s => String(s.id) !== String(currentStationId));
+        pSelect.innerHTML = potential.map(s => `<option value="${s.id}">${s.name} (${s.station_type})</option>`).join('');
+      }
+    };
+
+    function deleteStationConfirm(stationId, stationName) {
+      UI.modal({
+        html: `
+          <h3 style="color:#ef4444;">Delete Transmission Station</h3>
+          <div style="margin:16px 0; padding:12px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; border-radius:4px;">
+            <p>Are you sure you want to delete the transmission station <b>"${stationName}"</b>?</p>
+            <p class="muted small" style="margin-top:8px;">This action will:</p>
+            <ul class="muted small" style="margin-top:4px; padding-left:20px;">
+              <li>Remove all sectors associated with this station</li>
+              <li>Disconnect all radios assigned to these sectors</li>
+              <li>This action cannot be undone</li>
+            </ul>
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Delete Station", className: "btn", style: "background-color: #ef4444; color: white;", onClick: async () => {
+            try {
+              const res = await apiFetch(`/stations/${stationId}`, { method: 'DELETE' });
+              
+              if (res.ok) {
+                UI.toaster.push('success', `Station "${stationName}" deleted successfully`);
+                await loadStations();
+              } else {
+                const error = await res.text();
+                UI.toaster.push('error', `Failed to delete station: ${error}`);
+              }
+            } catch (e) {
+              console.error('Delete error:', e);
+              UI.toaster.push('error', 'Failed to delete station', 3000);
+            }
+          }}
+        ]
+      });
+    }
+
+    function openAddStationModal() {
+      UI.modal({
+        html: `
+          <h3>Add Transmission Station</h3>
+          <label class="muted small">Station Name</label>
+          <input id="stName" class="input" placeholder="Station Name (e.g. Hilltop Tower)">
+          <label class="muted small" style="margin-top:10px; display:block">Location</label>
+          <input id="stLoc" class="input" style="margin-top:10px" placeholder="Location">
+          
+          <label class="muted small" style="margin-top:10px; display:block">Station Type</label>
+          <select id="stType" class="input" onchange="toggleStationLogic()">
+            <option value="primary">Primary (Gateway)</option>
+            <option value="secondary">Secondary (Relay/Node)</option>
+            <option value="backup">Backup (Redundant Gateway)</option>
+          </select>
+
+          <div id="parentGroup" style="display:none; margin-top:10px">
+            <label class="muted small">Linked To (Uplink Station)</label>
+            <select id="stParent" class="input"></select>
+          </div>
+
+          <div id="parentDeviceGroup" style="display:none; margin-top:10px">
+            <label class="muted small">Linked via Device (Uplink)</label>
+            <select id="stLinkDevice" class="input"></select>
+          </div>
+
+          <label class="muted small" style="margin-top:10px; display:block">Station Main Device Type</label>
+          <select id="stDevice" class="input">
+            <option value="Mikrotik CCR Series">Mikrotik CCR (Gateway)</option>
+            <option value="Ubiquiti AirFiber 5XHD">Ubiquiti AirFiber (Backhaul)</option>
+            <option value="Ubiquiti PowerBeam">Ubiquiti PowerBeam</option>
+            <option value="Cambium Force 300">Cambium Force 300</option>
+            <option value="Siklu EtherHaul">Siklu EtherHaul</option>
+          </select>
+
+            <label class="muted small" style="margin-top:10px; display:block">Main Device MAC Address</label>
+            <input id="stMainMac" class="input" placeholder="AA:BB:CC:DD:EE:FF">
+            <label class="muted small" style="margin-top:10px; display:block">Main Device IP Address</label>
+            <input id="stMainIp" class="input" placeholder="10.0.0.1">
+
+          <div id="gatewayConfig" style="display:none; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+            <h4 style="margin-bottom:10px; color:#34d399;">Gateway Configuration</h4>
+            <label class="muted small">MAC Address</label>
+            <input id="stGatewayMac" class="input" placeholder="AA:BB:CC:DD:EE:FF">
+            <label class="muted small" style="margin-top:10px; display:block">IP Configuration</label>
+            <select id="stGatewayIpType" class="input" onchange="toggleGatewayIpFields()">
+              <option value="dhcp">DHCP</option>
+              <option value="static">Static IP</option>
+              <option value="pppoe">PPPoE</option>
+            </select>
+            <div id="gatewayStaticFields" style="display:none; margin-top:10px;">
+              <label class="muted small">IP Address</label>
+              <input id="stGatewayIp" class="input" placeholder="192.168.1.1">
+              <label class="muted small" style="margin-top:10px; display:block">Netmask</label>
+              <input id="stGatewayNetmask" class="input" placeholder="255.255.255.0">
+            </div>
+            <div id="gatewayPppoeFields" style="display:none; margin-top:10px;">
+              <label class="muted small">PPPoE Username</label>
+              <input id="stGatewayPppoeUser" class="input" placeholder="username">
+              <label class="muted small" style="margin-top:10px; display:block">PPPoE Password</label>
+              <input id="stGatewayPppoePass" type="password" class="input" placeholder="password">
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <input type="checkbox" id="stGateway" checked disabled> <label for="stGateway">Gateway Entry Point</label>
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Create", onClick: async () => {
+            const type = document.getElementById('stType').value;
+            const parentId = document.getElementById('stParent').value;
+            const linkDeviceId = document.getElementById('stLinkDevice').value;
+            
+            if ((type === 'secondary' || type === 'backup') && !parentId) {
+              UI.toaster.push('error', 'Linked station required for this type');
+              return false;
+            }
+
+            const payload = {
+              name: document.getElementById('stName').value,
+              location: document.getElementById('stLoc').value,
+              station_type: type,
+              parent_id: parentId ? parseInt(parentId) : null,
+              link_device_id: linkDeviceId || null,
+              device_model: document.getElementById('stDevice').value,
+              main_device_mac: document.getElementById('stMainMac').value,
+              main_device_ip: document.getElementById('stMainIp').value,
+              is_gateway: document.getElementById('stGateway').checked,
+              gateway_mac: document.getElementById('stGatewayMac')?.value || '',
+              gateway_ip: document.getElementById('stGatewayIp')?.value || '',
+              gateway_ip_type: document.getElementById('stGatewayIpType')?.value || 'dhcp',
+              gateway_netmask: document.getElementById('stGatewayNetmask')?.value || '',
+              gateway_pppoe_username: document.getElementById('stGatewayPppoeUser')?.value || '',
+              gateway_pppoe_password: document.getElementById('stGatewayPppoePass')?.value || ''
+            };
+            const res = await apiFetch('/stations', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok) { loadStations(); UI.toaster.push('success', 'Station added'); }
+          }}
+        ]
+      });
+      setTimeout(toggleStationLogic, 0); // Defer to ensure modal elements are in DOM
+    }
+
+    window.toggleStationLogic = () => {
+      const stType = document.getElementById('stType');
+      const pGroup = document.getElementById('parentGroup');
+      const pSelect = document.getElementById('stParent');
+      const pdGroup = document.getElementById('parentDeviceGroup');
+      const gw = document.getElementById('stGateway');
+
+      if (!stType || !pGroup || !pSelect || !gw || !pdGroup) return;
+
+      const type = stType.value;
+      const stations = window._stationsCache || [];
+
+      const gwConfig = document.getElementById('gatewayConfig');
+
+      if (type === 'primary') {
+        pGroup.style.display = 'none';
+        pdGroup.style.display = 'none';
+        gw.checked = true;
+        gw.disabled = true;
+        if (gwConfig) gwConfig.style.display = 'block';
+      } else {
+        pGroup.style.display = 'block';
+        pdGroup.style.display = 'block';
+        gw.checked = false;
+        gw.disabled = false;
+        if (gwConfig) gwConfig.style.display = gw.checked ? 'block' : 'none';
+        
+        const potential = stations;
+        pSelect.innerHTML = potential.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+        pSelect.onchange = async () => {
+           const res = await apiFetch('/devices');
+           const devs = await res.json();
+           const stationDevs = devs.filter(d => d.station_id == pSelect.value);
+           const pdSelect = document.getElementById('stLinkDevice');
+           pdSelect.innerHTML = stationDevs.map(d => `<option value="${d.device_id}">${d.name || d.device_id}</option>`).join('');
+        };
+        pSelect.onchange();
+      }
+    };
+
+    window.toggleGatewayIpFields = () => {
+      const ipType = document.getElementById('stGatewayIpType')?.value || 'dhcp';
+      const staticFields = document.getElementById('gatewayStaticFields');
+      const pppoeFields = document.getElementById('gatewayPppoeFields');
+      
+      if (staticFields) staticFields.style.display = ipType === 'static' ? 'block' : 'none';
+      if (pppoeFields) pppoeFields.style.display = ipType === 'pppoe' ? 'block' : 'none';
+    };
+
+    function addDevice(stationId) {
+      UI.modal({
+        html: `
+          <div style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+            <h3>Add Device to Station</h3>
+
+            <label class="muted small">Device Type</label>
+            <select id="devType" class="input" onchange="toggleDeviceFields(${stationId})">
+              <option value="sector">Sector (Transmission)</option>
+              <option value="gateway">Gateway</option>
+              <option value="switch">Network Switch</option>
+              <option value="backhaul">Backhaul Link</option>
+              <option value="ap">Access Point (AP)</option>
+              <option value="camera">IP Camera</option>
+              <option value="radio">Radio (Wireless)</option>
+              <option value="router">Router</option>
+            </select>
+
+            <!-- Common fields -->
+            <div id="commonFields">
+              <label class="muted small" style="margin-top:10px; display:block">Device Name</label>
+              <input id="devName" class="input" placeholder="e.g. North Tower Device">
+              <div id="devIPRow">
+                <label class="muted small" style="margin-top:10px; display:block">IP Address</label>
+                <input id="devIP" class="input" placeholder="192.168.1.50">
+              </div>
+              <label class="muted small" style="margin-top:10px; display:block">MAC Address</label>
+              <input id="devMAC" class="input" placeholder="AA:BB:CC:DD:EE:FF">
+              <label class="muted small" style="margin-top:10px; display:block">Model</label>
+              <input id="devModel" class="input" placeholder="e.g. Mikrotik CCR">
+            </div>
+
+            <!-- Sector settings -->
+            <div id="sectorFields" style="display:none; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+              <h4 style="margin-bottom:10px; color:#38bdf8;">Sector Settings</h4>
+              <label class="muted small">Horn Orientation</label>
+              <input id="secHornOrientation" class="input" placeholder="e.g. 30">
+              <label class="muted small" style="margin-top:10px; display:block">IP Type</label>
+              <select id="secIPType" class="input" onchange="toggleSectorIPFields()">
+                <option value="dhcp">DHCP</option>
+                <option value="static">Static IP</option>
+              </select>
+              <div id="sectorStaticIPFields" style="display:none; margin-top:10px;">
+                <label class="muted small">IP Address</label>
+                <input id="secIPAddress" class="input" placeholder="192.168.1.50">
+                <label class="muted small" style="margin-top:10px; display:block">Netmask</label>
+                <input id="secNetmask" class="input" placeholder="255.255.255.0">
+              </div>
+            </div>
+
+            <!-- Backhaul settings -->
+            <div id="backhaulFields" style="display:none; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+              <h4 style="margin-bottom:10px; color:#fbbf24;">Backhaul Configuration</h4>
+              <label class="muted small">SSID / Link Name</label>
+              <input id="bhSSID" class="input" placeholder="e.g. TOWER-A-TO-B">
+              <label class="muted small" style="margin-top:10px; display:block">Frequency (MHz)</label>
+              <input id="bhFreq" class="input" placeholder="e.g. 5800">
+              <label class="muted small" style="margin-top:10px; display:block">Channel Width</label>
+              <select id="bhWidth" class="input">
+                <option value="20">20 MHz</option>
+                <option value="40">40 MHz</option>
+                <option value="80">80 MHz</option>
+              </select>
+            </div>
+
+            <!-- Radio sector selector -->
+            <div id="radioFields" style="display:none">
+              <label class="muted small" style="margin-top:10px; display:block">Assigned Sector</label>
+              <select id="radioSector" class="input">
+                <option value="">Select a sector...</option>
+              </select>
+            </div>
+
+            <!-- Parent device selector -->
+            <div id="parentDeviceFields" style="display:none">
+              <label class="muted small" style="margin-top:10px; display:block">Uplink Device (Parent)</label>
+              <select id="parentDevice" class="input">
+                <option value="">No Parent (Root Device)</option>
+              </select>
+            </div>
+
+            <!-- Gateway IP config -->
+            <div id="gatewayFields" style="display:none; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+              <h4 style="margin-bottom:10px; color:#34d399;">IP Configuration</h4>
+              <label class="muted small">IP Type</label>
+              <select id="devIpType" class="input" onchange="toggleDeviceIpFields()">
+                <option value="dhcp">DHCP</option>
+                <option value="static">Static IP</option>
+                <option value="pppoe">PPPoE</option>
+              </select>
+              <div id="deviceStaticFields" style="display:none; margin-top:10px;">
+                <label class="muted small">Netmask</label>
+                <input id="devNetmask" class="input" placeholder="255.255.255.0">
+              </div>
+              <div id="devicePppoeFields" style="display:none; margin-top:10px;">
+                <label class="muted small">PPPoE Username</label>
+                <input id="devPppoeUser" class="input" placeholder="username">
+                <label class="muted small" style="margin-top:10px; display:block">PPPoE Password</label>
+                <input id="devPppoePass" type="password" class="input" placeholder="password">
+              </div>
+            </div>
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Add Device", onClick: async () => {
+            const devType = document.getElementById('devType').value;
+            const devName = document.getElementById('devName').value;
+            const devIP = document.getElementById('devIP').value;
+            const devMAC = document.getElementById('devMAC').value;
+            const devModel = document.getElementById('devModel').value;
+            const parentId = document.getElementById('parentDevice')?.value;
+            
+            if (!devName) {
+              UI.toaster.push('error', 'Device name is required');
+              return false;
+            }
+
+            let payload = { 
+                name: devName, 
+                device_type: devType, 
+                mac_address: devMAC, 
+                model: devModel,
+                parent_device_id: (parentId === "" || !parentId || parentId === "null") ? null : parentId
+            };
+
+            if (devType === 'sector') {
+              payload.horn_orientation = document.getElementById('secHornOrientation')?.value || null;
+              payload.ip_type = document.getElementById('secIPType')?.value || 'dhcp';
+              if (payload.ip_type === 'static') {
+                payload.ip_address = document.getElementById('secIPAddress')?.value || '';
+                payload.netmask = document.getElementById('secNetmask')?.value || '';
+              }
+            } else {
+              payload.ip_address = devIP;
+            }
+
+            if (devType === 'backhaul') {
+              payload.ssid = document.getElementById('bhSSID')?.value;
+              payload.frequency = document.getElementById('bhFreq')?.value;
+              payload.channel_width = document.getElementById('bhWidth')?.value;
+            }
+
+            if (devType === 'radio') {
+              const sectorId = document.getElementById('radioSector').value;
+              if (!sectorId) {
+                UI.toaster.push('error', 'Sector is required for radio devices');
+                return false;
+              }
+              payload.sector_id = parseInt(sectorId);
+              // Force logical parent to the Sector so it appears in the tree correctly
+              payload.parent_device_id = `SEC-${sectorId}`;
+            } else if (devType === 'gateway') {
+              payload.ip_type = document.getElementById('devIpType')?.value || 'dhcp';
+              if (payload.ip_type === 'static') {
+                payload.netmask = document.getElementById('devNetmask')?.value || '';
+              } else if (payload.ip_type === 'pppoe') {
+                payload.pppoe_username = document.getElementById('devPppoeUser')?.value || '';
+                payload.pppoe_password = document.getElementById('devPppoePass')?.value || '';
+              }
+            }
+
+            try {
+              const res = await apiFetch(`/stations/${stationId}/devices`, { method: 'POST', body: JSON.stringify(payload) });
+              if (res.ok) {
+                const result = await res.json();
+                loadStations();
+                UI.toaster.push('success', result.message || 'Device added successfully');
+              } else {
+                const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                UI.toaster.push('error', error.detail || 'Failed to add device', 4000);
+              }
+            } catch (e) {
+              console.error('Error adding device:', e);
+              UI.toaster.push('error', 'Network error: ' + e.message, 4000);
+            }
+          }}
+        ]
+      });
+      setTimeout(() => {
+        populateClientDropdown();
+        if (document.getElementById('devType')) toggleDeviceFields(stationId);
+      }, 0);
+    }
+
+    window.toggleDeviceFields = async (stationId) => {
+      const devType = document.getElementById('devType')?.value || 'sector';
+      
+      // Hide all device-specific sections that exist in the DOM
+      const sections = ['sectorFields', 'radioFields', 'gatewayFields', 'parentDeviceFields', 'backhaulFields'];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+
+      const devIPRow = document.getElementById('devIPRow');
+      if (devIPRow) devIPRow.style.display = (devType === 'sector') ? 'none' : 'block';
+
+      document.getElementById('commonFields').style.display = 'block';
+      
+      populateParentByClient();
+
+      // Show the selected device type fields
+      if (devType === 'sector') {
+        document.getElementById('sectorFields').style.display = 'block';
+        document.getElementById('commonFields').style.display = 'block'; // Show common fields for sectors
+        // Reset IP type to DHCP when sector is selected
+        const ipTypeSelect = document.getElementById('secIPType');
+        if (ipTypeSelect) {
+          ipTypeSelect.value = 'dhcp';
+          toggleSectorIPFields();
+        }
+      } else if (devType === 'backhaul') {
+        document.getElementById('backhaulFields').style.display = 'block';
+        document.getElementById('parentDeviceFields').style.display = 'block';
+        if (stationId) populateParentDeviceDropdown(stationId);
+      } else if (['switch', 'ap', 'camera', 'router'].includes(devType)) {
+        document.getElementById('parentDeviceFields').style.display = 'block';
+        if (stationId) populateParentDeviceDropdown(stationId);
+      } else if (devType === 'radio') {
+        document.getElementById('radioFields').style.display = 'block';
+        // Populate sector dropdown
+        await populateSectorDropdown();
+      } else if (devType === 'gateway') {
+        document.getElementById('gatewayFields').style.display = 'block';
+        // Reset IP type to DHCP
+        const ipTypeSelect = document.getElementById('devIpType');
+        if (ipTypeSelect) {
+          ipTypeSelect.value = 'dhcp';
+          toggleDeviceIpFields();
+        }
+      }
+    };
+
+    window.toggleSectorIPFields = () => {
+      const ipType = document.getElementById('secIPType')?.value || 'dhcp';
+      const staticIPFields = document.getElementById('sectorStaticIPFields');
+      
+      if (ipType === 'static') {
+        staticIPFields.style.display = 'block';
+      } else {
+        staticIPFields.style.display = 'none';
+      }
+    };
+
+    window.toggleDeviceIpFields = () => {
+      const ipType = document.getElementById('devIpType')?.value || 'dhcp';
+      const staticFields = document.getElementById('deviceStaticFields');
+      const pppoeFields = document.getElementById('devicePppoeFields');
+      
+      if (staticFields) staticFields.style.display = ipType === 'static' ? 'block' : 'none';
+      if (pppoeFields) pppoeFields.style.display = ipType === 'pppoe' ? 'block' : 'none';
+    };
+
+    window.populateSectorDropdown = async () => {
+      try {
+        const res = await apiFetch('/stations');
+        const stations = await res.json();
+        const sectorSelect = document.getElementById('radioSector');
+        
+        // Clear existing options except the first placeholder
+        sectorSelect.innerHTML = '<option value="">Select a sector...</option>';
+        
+        // Populate with sectors from all stations
+        stations.forEach(station => {
+          (station.sectors || []).forEach(sector => {
+            const option = document.createElement('option');
+            option.value = sector.id;
+            option.textContent = `${sector.name} (${station.name})`;
+            sectorSelect.appendChild(option);
+          });
+        });
+      } catch (e) {
+        console.error('Failed to fetch sectors:', e);
+      }
+    };
+
+    window.populateParentDeviceDropdown = async (stationId) => {
+      try {
+        const res = await apiFetch('/devices');
+        if (!res.ok) return;
+        const devs = await res.json();
+        const stationDevs = devs.filter(d => String(d.station_id) === String(stationId));
+        const select = document.getElementById('parentDevice');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">No Parent (Root Device)</option>';
+        stationDevs.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.device_id;
+          opt.textContent = `${d.name || d.device_id} (${d.device_type})`;
+          select.appendChild(opt);
+        });
+      } catch (e) { console.error('Failed to populate parent devices:', e); }
+    };
+
+    window.populateClientDropdown = async () => {
+      try {
+        const res = await apiFetch('/clients');
+        if (!res.ok) return;
+        const clients = await res.json();
+        const clientSelect = document.getElementById('devClient');
+        if (clientSelect) {
+          clientSelect.innerHTML = '<option value="">Infrastructure / Internal</option>' + 
+            clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+      } catch (e) { console.error('Failed to fetch clients:', e); }
+    };
+
+    window.populateParentByClient = async () => {
+      const clientId = document.getElementById('devClient')?.value;
+      const parentSelect = document.getElementById('parentDevice');
+      if (!parentSelect) return;
+
+      parentSelect.innerHTML = '<option value="">Loading...</option>';
+
+      try {
+        const res = await apiFetch('/devices');
+        if (!res.ok) return;
+        const allDevices = await res.json();
+        const isInfra = (d) => !d.client_id || ['sector', 'radio', 'access point', 'infrastructure'].includes((d.device_type || "").toLowerCase());
+        const clientDevices = clientId ? allDevices.filter(d => d.client_id == clientId || isInfra(d)) : allDevices.filter(d => !d.client_id);
+        
+        parentSelect.innerHTML = `<option value="">No Parent (${clientId ? 'Root for Client' : 'Infrastructure Root'})</option>`;
+        clientDevices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device.device_id || device.id;
+          option.textContent = `${device.name || device.device_id || device.id} (${device.device_type})`;
+          parentSelect.appendChild(option);
+        });
+      } catch (e) { console.error('Failed to fetch parent devices:', e); }
+    };
+
+    window.editStationDevice = (stationId, deviceId) => {
+      // Get device data from cache
+      const device = window._stationDevices?.[deviceId];
+      
+      if (!device) {
+        UI.toaster.push('error', 'Device not found');
+        return;
+      }
+      
+      UI.modal({
+        wide: true,
+        html: `
+          <h3>Edit Device: ${device.name || device.device_id}</h3>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div>
+              <label class="muted small">Device Name</label>
+              <input id="editDevName" class="input" value="${device.name || ''}" placeholder="Device Name">
+            </div>
+            <div>
+              <label class="muted small">Device Type</label>
+              <input id="editDevType" class="input" value="${device.device_type || ''}" placeholder="Device Type" disabled>
+            </div>
+            <div>
+              <label class="muted small">Model</label>
+              <input id="editDevModel" class="input" value="${device.model || ''}" placeholder="Model">
+            </div>
+            <div>
+              <label class="muted small">MAC Address</label>
+              <input id="editDevMAC" class="input" value="${device.mac_address || ''}" placeholder="AA:BB:CC:DD:EE:FF">
+            </div>
+            <div>
+              <label class="muted small">IP Address</label>
+              <input id="editDevIP" class="input" value="${device.ip_address || ''}" placeholder="192.168.1.1">
+            </div>
+            <div>
+              <label class="muted small">IP Type</label>
+              <select id="editDevIpType" class="input" onchange="toggleEditDeviceIpFields()">
+                <option value="dhcp" ${device.ip_type === 'dhcp' ? 'selected' : ''}>DHCP</option>
+                <option value="static" ${device.ip_type === 'static' ? 'selected' : ''}>Static</option>
+                <option value="pppoe" ${device.ip_type === 'pppoe' ? 'selected' : ''}>PPPoE</option>
+              </select>
+            </div>
+          </div>
+          <div id="editDevStaticFields" style="display:${device.ip_type === 'static' ? 'block' : 'none'}; margin-bottom:16px;">
+            <label class="muted small">Netmask</label>
+            <input id="editDevNetmask" class="input" value="${device.netmask || ''}" placeholder="255.255.255.0">
+          </div>
+          <div id="editDevPppoeFields" style="display:${device.ip_type === 'pppoe' ? 'block' : 'none'}; margin-bottom:16px;">
+            <label class="muted small">PPPoE Username</label>
+            <input id="editDevPppoeUser" class="input" value="${device.pppoe_username || ''}" placeholder="username" style="margin-bottom:10px; display:block;">
+            <label class="muted small">PPPoE Password</label>
+            <input id="editDevPppoePass" type="password" class="input" value="${device.pppoe_password || ''}" placeholder="password">
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Delete Device", className: "btn ghost", style: "color: #ef4444;", onClick: () => {
+            deleteStationDeviceConfirm(stationId, deviceId, device.name || device.device_id);
+          }},
+          { label: "Save Changes", className: "btn", onClick: async () => {
+            const payload = {
+              name: document.getElementById('editDevName').value,
+              model: document.getElementById('editDevModel').value,
+              mac_address: document.getElementById('editDevMAC').value,
+              ip_address: document.getElementById('editDevIP').value,
+              ip_type: document.getElementById('editDevIpType').value
+            };
+
+            const ipType = payload.ip_type;
+            if (ipType === 'static') {
+              payload.netmask = document.getElementById('editDevNetmask')?.value || '';
+            } else if (ipType === 'pppoe') {
+              payload.pppoe_username = document.getElementById('editDevPppoeUser')?.value || '';
+              payload.pppoe_password = document.getElementById('editDevPppoePass')?.value || '';
+            }
+
+            try {
+              const res = await apiFetch(`/stations/${stationId}/devices/${deviceId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+              });
+
+              if (res.ok) {
+                UI.toaster.push('success', 'Device updated successfully');
+                await loadStations();
+              } else {
+                const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                UI.toaster.push('error', error.detail || 'Failed to update device', 4000);
+              }
+            } catch (e) {
+              console.error('Error updating device:', e);
+              UI.toaster.push('error', 'Network error: ' + e.message, 4000);
+            }
+          }}
+        ]
+      });
+      setTimeout(() => toggleEditDeviceIpFields(), 0);
+    };
+
+    window.toggleEditDeviceIpFields = () => {
+      const ipType = document.getElementById('editDevIpType')?.value || 'dhcp';
+      const staticFields = document.getElementById('editDevStaticFields');
+      const pppoeFields = document.getElementById('editDevPppoeFields');
+      
+      if (staticFields) staticFields.style.display = ipType === 'static' ? 'block' : 'none';
+      if (pppoeFields) pppoeFields.style.display = ipType === 'pppoe' ? 'block' : 'none';
+    };
+
+    window.deleteStationDeviceConfirm = (stationId, deviceId, deviceName) => {
+      UI.modal({
+        html: `
+          <h3 fstyle="color:#ef4444;">Delete Device</h3>
+          <div style="margin:16px 0; padding:12px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; border-radius:4px;">
+            <p>Are you sure you want to delete the device <b>"${deviceName}"</b> from this station?</p>
+            <p class="muted small" style="margin-top:8px;">Note:</p>
+            <ul class="muted small" style="margin-top:4px; padding-left:20px;">
+              <li>This device will be removed from the station</li>
+              <li>Device backups and dependent devices will not be deleted</li>
+              <li>This action cannot be undone</li>
+            </ul>
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Delete Device", className: "btn", style: "background-color: #ef4444; color: white;", onClick: async () => {
+            try {
+              const res = await apiFetch(`/stations/${stationId}/devices/${deviceId}`, { method: 'DELETE' });
+              
+              if (res.ok) {
+                UI.toaster.push('success', `Device "${deviceName}" deleted successfully`);
+                await loadStations();
+              } else {
+                const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                UI.toaster.push('error', error.detail || 'Failed to delete device', 4000);
+              }
+            } catch (e) {
+              console.error('Delete error:', e);
+              UI.toaster.push('error', 'Network error: ' + e.message, 4000);
+            }
+          }}
+        ]
+      });
+    };
+
+    async function editStationSector(stationId, sectorId) {
+      const stations = window._stationsCache || [];
+      const station = stations.find(s => s.id === stationId);
+      const sector = station?.sectors?.find(s => s.id === sectorId);
+      if (!sector) {
+        UI.toaster.push('error', 'Sector not found');
+        return;
+      }
+
+      UI.modal({
+        wide: true,
+        html: `
+          <h3>Edit Sector: ${sector.name}</h3>
+          <label class="muted small">Sector Name</label>
+          <input id="editSectorName" class="input" value="${sector.name || ''}" placeholder="Sector Name">
+          <label class="muted small" style="margin-top:10px; display:block">Model</label>
+          <input id="editSectorModel" class="input" value="${sector.device_model || ''}" placeholder="Sector Model">
+          <label class="muted small" style="margin-top:10px; display:block">MAC Address</label>
+          <input id="editSectorMac" class="input" value="${sector.mac_address || ''}" placeholder="AA:BB:CC:DD:EE:FF">
+          <label class="muted small" style="margin-top:10px; display:block">Horn Orientation</label>
+          <input id="editSectorHorn" class="input" value="${sector.horn_orientation || ''}" placeholder="e.g. 30">
+          <label class="muted small" style="margin-top:10px; display:block">IP Type</label>
+          <select id="editSectorIpType" class="input" onchange="toggleEditSectorIPFields()">
+            <option value="dhcp" ${sector.ip_type === 'dhcp' ? 'selected' : ''}>DHCP</option>
+            <option value="static" ${sector.ip_type === 'static' ? 'selected' : ''}>Static IP</option>
+          </select>
+          <div id="editSectorStaticFields" style="display:${sector.ip_type === 'static' ? 'block' : 'none'}; margin-top:10px;">
+            <label class="muted small">IP Address</label>
+            <input id="editSectorIpAddress" class="input" value="${sector.ip_address || ''}" placeholder="192.168.1.50">
+            <label class="muted small" style="margin-top:10px; display:block">Netmask</label>
+            <input id="editSectorNetmask" class="input" value="${sector.netmask || ''}" placeholder="255.255.255.0">
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Save Changes", className: "btn", onClick: async () => {
+            const payload = {
+              name: document.getElementById('editSectorName').value,
+              device_model: document.getElementById('editSectorModel').value,
+              mac_address: document.getElementById('editSectorMac').value,
+              horn_orientation: document.getElementById('editSectorHorn').value,
+              ip_type: document.getElementById('editSectorIpType').value,
+            };
+            if (payload.ip_type === 'static') {
+              payload.ip_address = document.getElementById('editSectorIpAddress')?.value || '';
+              payload.netmask = document.getElementById('editSectorNetmask')?.value || '';
+            }
+
+            try {
+              const res = await apiFetch(`/stations/${stationId}/sectors/${sectorId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+              });
+              if (res.ok) {
+                UI.toaster.push('success', 'Sector updated successfully');
+                await loadStations();
+              } else {
+                const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                UI.toaster.push('error', error.detail || 'Failed to update sector', 4000);
+              }
+            } catch (e) {
+              console.error('Error updating sector:', e);
+              UI.toaster.push('error', 'Network error: ' + e.message, 4000);
+            }
+          }}
+        ]
+      });
+
+      setTimeout(() => toggleEditSectorIPFields(), 0);
+    }
+
+    window.toggleEditSectorIPFields = () => {
+      const ipType = document.getElementById('editSectorIpType')?.value || 'dhcp';
+      const staticFields = document.getElementById('editSectorStaticFields');
+      if (staticFields) staticFields.style.display = ipType === 'static' ? 'block' : 'none';
+    };
+
+    function deleteStationSectorConfirm(stationId, sectorId, sectorName) {
+      UI.modal({
+        html: `
+          <h3 style="color:#ef4444;">Delete Sector</h3>
+          <div style="margin:16px 0; padding:12px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; border-radius:4px;">
+            <p>Are you sure you want to delete the sector <b>"${sectorName}"</b>?</p>
+            <p class="muted small" style="margin-top:8px;">This action will:</p>
+            <ul class="muted small" style="margin-top:4px; padding-left:20px;">
+              <li>Remove the sector from the station</li>
+              <li>Also remove the corresponding sector device entry</li>
+              <li>This action cannot be undone</li>
+            </ul>
+          </div>
+        `,
+        buttons: [
+          { label: "Cancel", className: "btn ghost" },
+          { label: "Delete Sector", className: "btn", style: "background-color: #ef4444; color: white;", onClick: async () => {
+            try {
+              const res = await apiFetch(`/stations/${stationId}/sectors/${sectorId}`, { method: 'DELETE' });
+              if (res.ok) {
+                UI.toaster.push('success', `Sector "${sectorName}" deleted successfully`);
+                await loadStations();
+              } else {
+                const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                UI.toaster.push('error', error.detail || 'Failed to delete sector', 4000);
+              }
+            } catch (e) {
+              console.error('Sector delete error:', e);
+              UI.toaster.push('error', 'Network error: ' + e.message, 4000);
+            }
+          }}
+        ]
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadStations);
+  </script>
+</body>
+</html>

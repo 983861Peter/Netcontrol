@@ -1,0 +1,20 @@
+{
+  "name": "Peter's",
+  "scan_interval": 60,
+  "default_ssid": "MyISP-Guest",
+  "default_pass": "changeme",
+  "enable_firewall": false,
+  "blocked_ports": "22,80,443",
+  "security_policies": "",
+  "enable_vpn": false,
+  "vpn_server": "",
+  "vpn_port": 1194,
+  "vpn_protocol": "openvpn",
+  "ui_updates": "auto",
+  "enable_debug": false,
+  "ntp_server": "pool.ntp.org",
+  "smtp_server": "",
+  "smtp_port": 587,
+  "smtp_user": "",
+  "smtp_pass": ""
+}

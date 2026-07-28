@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="users.css">
+</head>
+<body>
+  <script src="navbar.js"></script>
+
+  <div class="container">
+    <h1>User Management</h1>
+    <button id="addUserBtn" class="primary-btn">+ Add User</button>
+
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Active</th>
+          <th>Permissions</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal">&times;</span>
+      <h2>Add New User</h2>
+      <form id="userForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="email" id="email" placeholder="Email (optional)">
+        <input type="password" id="password" placeholder="Password" required>
+        <select id="role">
+          <option value="technician">Technician</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button type="submit" class="primary-btn">Create User</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="users.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NetControl — Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">NetControl</div>
+      <div class="muted small px">Controller</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="Settings" onclick="window.location='settings.html'">⚙️</button>
+      <button class="icon-btn" id="btnLogout" title="Logout">⎋</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <h4>Menu</h4>
+      <a class="nav-link active" href="index.html">Overview</a>
+      <a class="nav-link" href="stations.html">Stations & Sectors</a>
+      <a class="nav-link" href="devices.html">Devices</a>
+      <a class="nav-link" href="alerts.html">Alerts</a>
+      <a class="nav-link" href="clients.html">Clients</a>
+      <a class="nav-link" href="account.html">Account</a>
+      <a class="nav-link" href="settings.html">Settings</a>
+      <a class="nav-link" href="register_company.html">Company Registration </a>
+    </aside>
+
+    <main class="content">
+      <div class="header-row">
+        <h2>Overview</h2>
+        <div class="row">
+          <button class="btn" onclick="location.href='devices.html'">Manage Devices</button>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-bottom:14px; align-items: flex-start;">
+        <div class="card" style="flex:2; min-width: 320px">
+          <div class="title">System Status</div>
+          
+          <!-- Device Breakdown Grid -->
+          <div class="device-breakdown-grid" id="deviceBreakdown">
+            <!-- Populated by JS -->
+            <div class="stat-box"><div class="big">0</div><div class="muted small">Routers</div></div>
+            <div class="stat-box"><div class="big">0</div><div class="muted small">Switches</div></div>
+            <div class="stat-box"><div class="big">0</div><div class="muted small">Radios</div></div>
+            <div class="stat-box"><div class="big">0</div><div class="muted small">Gateways</div></div>
+            <div class="stat-box"><div class="big">0</div><div class="muted small">APs</div></div>
+            <div class="stat-box"><div class="big">0</div><div class="muted small">Cameras</div></div>
+          </div>
+
+          <div class="subsection" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:12px; margin-top:12px; display:flex; gap:24px; flex-wrap: wrap;">
+            <div>
+              <span class="big" id="totalDevices">0</span> <span class="muted small">Total Devices</span>
+            </div>
+            <div>
+              <span class="big" id="totalClients">0</span> <span class="muted small">Clients</span>
+            </div>
+            <div style="flex:1; min-width: 120px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                 <span class="muted small">CPU Load</span>
+                 <span class="small" id="cpuValue" style="font-weight:bold; color:#fff">-- %</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.1); height:6px; border-radius:3px; overflow:hidden;"><div id="cpuBar" style="width:0%; height:100%; background:#28d1ff; transition:width 0.5s ease;"></div></div>
+            </div>
+            <div style="flex:1; min-width: 120px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                 <span class="muted small">Memory Usage</span>
+                 <span class="small" id="memValue" style="font-weight:bold; color:#fff">-- %</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.1); height:6px; border-radius:3px; overflow:hidden;"><div id="memBar" style="width:0%; height:100%; background:#f39c12; transition:width 0.5s ease;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1; display:flex; flex-direction:column; height: 240px; cursor:pointer;" onclick="location.href='alerts.html'">
+          <div class="title">Live Event Log</div>
+          <div id="recentAlerts" style="margin-top:8px; flex:1; font-family:'Courier New', monospace; font-size:13px; overflow-y:auto; opacity:0.9"></div>
+        </div>
+      </div>
+
+      <!-- Analytics Section (Simulated) -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="title">System Analytics (Simulated 24h)</div>
+        <div class="analytics-row">
+          <div class="stat-box wide">
+            <div class="big" id="ana-tx">-- Mbps</div><div class="muted small">Avg TX Rate</div>
+          </div>
+          <div class="stat-box wide">
+            <div class="big" id="ana-rx">-- Mbps</div><div class="muted small">Avg RX Rate</div>
+          </div>
+          <div class="stat-box wide">
+            <div class="big" id="ana-data">-- GB</div><div class="muted small">Data Usage</div>
+          </div>
+          <div class="stat-box wide">
+            <div class="big" id="ana-active">0</div><div class="muted small">Active Devices (24h)</div>
+          </div>
+        </div>
+        <canvas id="analyticsChart" height="260" style="width: 100%; margin-top: 20px;"></canvas>
+      </div>
+
+      <div class="card">
+          <div class="title">Network Topology</div>
+          <canvas id="networkMap"></canvas>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="title">Quick Device View</div>
+        <div id="quickDevice" class="muted small">Select a device from Devices page or click a node in the topology</div>
+        <div style="margin-top:12px; display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:#94a3b8;">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6366f1;margin-right:4px;"></span>Station</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8b5cf6;margin-right:4px;"></span>Sector</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Radio (Online)</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Radio (Offline)</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Infra Device</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:4px;"></span>CPE</span>
+          <span><span style="display:inline-block;width:16px;height:2px;background:#f59e0b;margin-right:4px;vertical-align:middle;"></span>LLDP Link</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts" style="z-index: 10000;"></div>
+  <div id="modalRoot"></div>
+
+  <script src="main.js"></script>
+  <script src="ui_utils.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="analytics.js"></script>
+</body>
+</html>
