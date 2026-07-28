@@ -9,6 +9,7 @@ NetControl is a router simulation and network management platform built with:
 - Authentication, device management, station and sector management, and audit logging
 
 This README is intended for new users and developers who want to run, test, and understand the system.
+NOTE: Some features and files are still under works as this is a simulation with partial real-world functionality.
 
 ## Key Features
 
