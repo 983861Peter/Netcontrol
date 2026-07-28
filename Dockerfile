@@ -2,20 +2,30 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (sqlite3 useful for debugging; build-essential kept)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only dependency definitions first for faster rebuilds
-COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt
+# Create persistent data directory
+RUN mkdir -p /data && chown -R 1000:1000 /data
+
+# Copy only requirements first for caching
+COPY requirements.txt /app/requirements.txt
+RUN python -m pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy application code
 COPY . /app
 
-# Expose the backend port
-EXPOSE 8080
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Run the FastAPI app
-CMD ["uvicorn", "router_sim.router_api:app", "--host", "0.0.0.0", "--port", "8080"]
+# Default absolute DB path in container; can be overridden via env on Render
+ENV DATABASE_URL=sqlite:////data/network_mgmt.db
+
+# Allow external services (Render) to mount /data as persistent disk
+VOLUME ["/data"]
+
+ENTRYPOINT ["/entrypoint.sh"]
