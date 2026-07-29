@@ -51,3 +51,64 @@
 .logout-btn:hover {
   background: #B02A37;
 }
+
+.mobile-menu-btn {
+  display: none;
+  font-size: 1.2rem;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .nav-right {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app {
+    flex-direction: column;
+    margin-top: 0;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    z-index: 1000;
+    background: var(--bg-sidebar);
+    transform: translateX(0);
+    transition: left 0.25s ease;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+  }
+
+  .sidebar.mobile-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 900;
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+  }
+
+  .content {
+    width: 100%;
+    padding: 16px;
+  }
+}
