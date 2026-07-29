@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NetControl — Stations</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="topbar">
     <div class="brand"><div class="logo">NetControl</div></div>
-    <button class="icon-btn mobile-menu-btn" id="mobileNavToggle" aria-label="Open menu">☰</button>
+    <div class="top-actions">
+      <button class="icon-btn mobile-menu-btn" id="mobileNavToggle" aria-label="Open menu">☰</button>
+    </div>
   </div>
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="app">
     <aside class="sidebar" id="appSidebar">
       <h4>Menu</h4>
@@ -22,6 +25,7 @@
       <a class="nav-link" href="account.html">Account</a>
       <a class="nav-link" href="settings.html">Settings</a>
     </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <main class="content">
       <div class="header-row">
         <h2>Transmission Stations</h2>
@@ -38,22 +42,22 @@
   <script src="ui_utils.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const mobileToggle = document.getElementById("mobileNavToggle");
-      const sidebar = document.getElementById("appSidebar");
-      const overlay = document.getElementById("sidebarOverlay");
+  const mobileToggle = document.getElementById("mobileNavToggle");
+  const sidebar = document.getElementById("appSidebar");
+  const overlay = document.getElementById("sidebarOverlay");
 
-      const closeSidebar = () => {
-        sidebar?.classList.remove("mobile-open");
-        overlay?.classList.remove("visible");
-      };
+  const closeSidebar = () => {
+    sidebar?.classList.remove("mobile-open");
+    overlay?.classList.remove("visible");
+  };
 
-      mobileToggle?.addEventListener("click", () => {
-        sidebar?.classList.toggle("mobile-open");
-        overlay?.classList.toggle("visible");
-      });
+  mobileToggle?.addEventListener("click", () => {
+    sidebar?.classList.toggle("mobile-open");
+    overlay?.classList.toggle("visible");
+  });
 
-      overlay?.addEventListener("click", closeSidebar);
-    });
+  overlay?.addEventListener("click", closeSidebar);
+});
     async function loadStations() {
       const res = await apiFetch('/stations');
       const stations = await res.json();
