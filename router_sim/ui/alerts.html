@@ -10,13 +10,15 @@
   <div class="topbar">
     <div class="brand"><div class="logo">NetControl</div></div>
     <div class="top-actions">
+      <button id="mobileNavToggle" class="icon-btn mobile-menu-btn" aria-label="Open menu">☰</button>
       <button class="icon-btn" onclick="location.href='index.html'">🏠</button>
       <button class="icon-btn" id="btnLogout3">⎋</button>
     </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
   </div>
 
   <div class="app">
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
       <h4>Alerts</h4>
       <a class="nav-link active" href="index.html">Overview</a>
       <a class="nav-link" href="stations.html">Stations & Sectors</a>
@@ -48,6 +50,25 @@
   <div class="toasts" id="toasts"></div>
   <div id="modalRoot"></div>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+  const mobileToggle = document.getElementById("mobileNavToggle");
+  const sidebar = document.getElementById("appSidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+
+  const closeSidebar = () => {
+    sidebar?.classList.remove("mobile-open");
+    overlay?.classList.remove("visible");
+  };
+
+  mobileToggle?.addEventListener("click", () => {
+    sidebar?.classList.toggle("mobile-open");
+    overlay?.classList.toggle("visible");
+  });
+
+  overlay?.addEventListener("click", closeSidebar);
+});
+</script>
   <script src="main.js"></script>
   <script src="ui_utils.js"></script>
   <script src="alerts.js"></script>
