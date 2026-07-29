@@ -13,13 +13,14 @@
       <div class="muted small px">Controller</div>
     </div>
     <div class="top-actions">
+      <button id="mobileNavToggle" class="icon-btn mobile-menu-btn" aria-label="Open menu">☰</button>
       <button class="icon-btn" title="Settings" onclick="window.location='settings.html'">⚙️</button>
       <button class="icon-btn" id="btnLogout" title="Logout">⎋</button>
     </div>
   </div>
 
   <div class="app">
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
       <h4>Menu</h4>
       <a class="nav-link active" href="index.html">Overview</a>
       <a class="nav-link" href="stations.html">Stations & Sectors</a>
@@ -30,6 +31,7 @@
       <a class="nav-link" href="settings.html">Settings</a>
       <a class="nav-link" href="register_company.html">Company Registration </a>
     </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="content">
       <div class="header-row">
@@ -127,7 +129,25 @@
 
   <div class="toasts" id="toasts" style="z-index: 10000;"></div>
   <div id="modalRoot"></div>
+<script >
+  document.addEventListener("DOMContentLoaded", () => {
+  const mobileToggle = document.getElementById("mobileNavToggle");
+  const sidebar = document.getElementById("appSidebar");
+  const overlay = document.getElementById("sidebarOverlay");
 
+  const closeSidebar = () => {
+    sidebar?.classList.remove("mobile-open");
+    overlay?.classList.remove("visible");
+  };
+
+  mobileToggle?.addEventListener("click", () => {
+    sidebar?.classList.toggle("mobile-open");
+    overlay?.classList.toggle("visible");
+  });
+
+  overlay?.addEventListener("click", closeSidebar);
+});
+</script>
   <script src="main.js"></script>
   <script src="ui_utils.js"></script>
   <script src="dashboard.js"></script>
