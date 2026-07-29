@@ -36,6 +36,7 @@ ntc_templates==8.0.0
 orjson==3.11.3
 paramiko==4.0.0
 passlib==1.7.4
+pip==26.1.2
 psycopg[binary]==3.1.13
 pyasn1==0.6.1
 pycparser==2.23
