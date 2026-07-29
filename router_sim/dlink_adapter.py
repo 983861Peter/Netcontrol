@@ -11,8 +11,8 @@ Supports:
 """
 
 import requests
-try: import telnetlib TELNET_AVAILABLE = True except 
-Exception: telnetlib = None TELNET_AVAILABLE = False
+# try: import telnetlib TELNET_AVAILABLE = True except 
+# Exception: telnetlib = None TELNET_AVAILABLE = False
 import socket
 from bs4 import BeautifulSoup
 from contextlib import closing
