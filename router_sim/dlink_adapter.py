@@ -16,9 +16,7 @@ import socket
 from bs4 import BeautifulSoup
 from contextlib import closing
 
-try: 
-    import telnetlib TELNET_AVAILABLE = True 
-except 
+try: import telnetlib TELNET_AVAILABLE = True except 
 Exception: telnetlib = None TELNET_AVAILABLE = False
 class DLinkAdapter:
     def __init__(self, host="192.168.0.1", username="admin", password=""):
