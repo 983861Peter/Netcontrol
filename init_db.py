@@ -1,4 +1,5 @@
-# router_sim/_init_db.py
+# init_db.py
+# Use the shared engine and URL from router_sim.db so sqlite-only connect_args aren't passed to Postgres.
 from router_sim.models import Base
 from router_sim.db import engine, SQLALCHEMY_DATABASE_URL
 
