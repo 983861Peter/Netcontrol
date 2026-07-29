@@ -9,6 +9,12 @@
   <div class="topbar">
     <div class="brand"><div class="logo">NetControl</div></div>
   </div>
+  <div class="top-actions">
+    <button class="icon-btn" title="Settings" onclick="window.location='settings.html'">⚙️</button>
+    <button class="icon-btn mobile-menu-btn" id="mobileNavToggle" aria-label="Open menu">☰</button>
+    <button class="icon-btn" id="btnLogout" title="Logout">⎋</button>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="app">
     <aside class="sidebar">
       <h4>Menu</h4>
@@ -35,6 +41,23 @@
   <script src="main.js"></script>
   <script src="ui_utils.js"></script>
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const mobileToggle = document.getElementById("mobileNavToggle");
+      const sidebar = document.getElementById("appSidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+
+      const closeSidebar = () => {
+        sidebar?.classList.remove("mobile-open");
+        overlay?.classList.remove("visible");
+      };
+
+      mobileToggle?.addEventListener("click", () => {
+        sidebar?.classList.toggle("mobile-open");
+        overlay?.classList.toggle("visible");
+      });
+
+      overlay?.addEventListener("click", closeSidebar);
+    });
     async function loadStations() {
       const res = await apiFetch('/stations');
       const stations = await res.json();
